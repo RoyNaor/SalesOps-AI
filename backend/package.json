@@ -1,0 +1,10 @@
+{
+  "name": "@salesops-ai/backend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "build": "node --check src/handlers/health.js",
+    "typecheck": "node --check src/handlers/health.js",
+    "lint": "node --check src/handlers/health.js"
+  }
+}

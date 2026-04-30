@@ -1,0 +1,58 @@
+AWSTemplateFormatVersion: "2010-09-09"
+Transform: AWS::Serverless-2016-10-31
+Description: SalesOps AI bootstrap API for the AWS student lab.
+
+Parameters:
+  StageName:
+    Type: String
+    Default: dev
+    AllowedPattern: "^[a-z0-9-]+$"
+    Description: API Gateway stage name.
+
+Globals:
+  Function:
+    Runtime: nodejs20.x
+    Timeout: 10
+    MemorySize: 128
+    Architectures:
+      - x86_64
+    Environment:
+      Variables:
+        NODE_OPTIONS: "--enable-source-maps"
+        SERVICE_NAME: salesops-ai
+        STAGE_NAME: !Ref StageName
+  Api:
+    Cors:
+      AllowMethods: "'GET,POST,PUT,OPTIONS'"
+      AllowHeaders: "'Content-Type,Authorization'"
+      AllowOrigin: "'*'"
+
+Resources:
+  SalesOpsApi:
+    Type: AWS::Serverless::Api
+    Properties:
+      StageName: !Ref StageName
+      EndpointConfiguration: REGIONAL
+
+  HealthFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: src/handlers/
+      Handler: health.handler
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Health endpoint for frontend/API wiring verification.
+      Events:
+        HealthRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /health
+            Method: GET
+
+Outputs:
+  ApiBaseUrl:
+    Description: Base URL for frontend VITE_API_BASE_URL.
+    Value: !Sub "https://${SalesOpsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}"
+  HealthUrl:
+    Description: Health endpoint URL.
+    Value: !Sub "https://${SalesOpsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/health"

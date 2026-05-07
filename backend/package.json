@@ -2,9 +2,16 @@
   "name": "@salesops-ai/backend",
   "version": "0.1.0",
   "private": true,
+  "files": [
+    "src"
+  ],
   "scripts": {
-    "build": "node --check src/handlers/health.js",
-    "typecheck": "node --check src/handlers/health.js",
-    "lint": "node --check src/handlers/health.js"
+    "build": "node --check src/handlers/health.js && node --check src/handlers/auth.js && node --check src/handlers/content.js",
+    "typecheck": "node --check src/handlers/health.js && node --check src/handlers/auth.js && node --check src/handlers/content.js",
+    "lint": "node --check src/handlers/health.js && node --check src/handlers/auth.js && node --check src/handlers/content.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-cognito-identity-provider": "^3.1044.0",
+    "@aws-sdk/client-dynamodb": "^3.1044.0"
   }
 }

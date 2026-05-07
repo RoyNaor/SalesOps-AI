@@ -2,6 +2,8 @@
 
 This guide explains what was created, how the frontend and backend connect, what AWS resources exist in the student lab, and what to do next.
 
+For current status and next checklist, use [milestones.md](milestones.md).
+
 ## 1. What You Have Now
 
 You now have a new npm workspace project:
@@ -47,6 +49,8 @@ Initial frontend routes:
 
 ```text
 /login
+/signup
+/personas
 /exam
 /scenarios
 /dashboard
@@ -78,18 +82,30 @@ Then open the Vite URL from your terminal. The app should call the deployed `/he
 
 The backend is in `backend/`.
 
-It uses AWS SAM, which is a framework for deploying serverless AWS apps with CloudFormation.
+It uses AWS SAM with the `nodejs24.x` Lambda runtime, which deploys serverless AWS apps with CloudFormation.
 
 Current backend pieces:
 
 - `template.yaml`: infrastructure definition.
 - `src/handlers/health.js`: Lambda handler for `GET /health`.
+- `src/handlers/auth.js`: Lambda handlers for Cognito auth and DynamoDB user profiles.
+- `src/handlers/content.js`: Lambda handlers for manager personas and scenarios.
 - `samconfig.toml`: saved SAM deploy settings.
 
 The first public backend endpoint is:
 
 ```text
 GET /health
+```
+
+Auth endpoints are documented in [auth-setup.md](auth-setup.md):
+
+```text
+POST /auth/signup
+POST /auth/confirm
+POST /auth/signin
+POST /auth/refresh
+GET /auth/me
 ```
 
 It returns a simple JSON payload:
@@ -118,6 +134,12 @@ SAM/CloudFormation created these AWS resources:
 - API Gateway REST API
 - API Gateway stage: `dev`
 - Lambda function: `HealthFunction`
+- Lambda functions for signup, confirm, signin, refresh, and me
+- Lambda functions for persona and scenario management
+- Cognito User Pool and web client
+- DynamoDB table: `salesops-ai-dev-Users`
+- DynamoDB table: `salesops-ai-dev-Personas`
+- DynamoDB table: `salesops-ai-dev-Scenarios`
 - Lambda permission so API Gateway can invoke the function
 - SAM managed S3 bucket for deployment artifacts
 
@@ -145,10 +167,10 @@ That means:
 ## 5. What I Did During Deploy
 
 1. Verified AWS CLI and SAM CLI were installed.
-2. Verified your AWS profile worked:
+2. Verified your AWS credentials worked:
 
 ```bash
-aws sts get-caller-identity --profile salesops-lab --region us-east-1
+aws sts get-caller-identity --region us-east-1
 ```
 
 3. Confirmed account matched the lab:
@@ -182,7 +204,7 @@ npm run sam:deploy:guided
 Check AWS identity:
 
 ```bash
-aws sts get-caller-identity --profile salesops-lab --region us-east-1
+aws sts get-caller-identity --region us-east-1
 ```
 
 Build backend:
@@ -202,7 +224,6 @@ Show deployed URLs:
 ```bash
 aws cloudformation describe-stacks \
   --stack-name salesops-ai-dev \
-  --profile salesops-lab \
   --region us-east-1 \
   --query "Stacks[0].Outputs" \
   --output table
@@ -257,30 +278,4 @@ You do not need:
 
 ## 8. What Is Next
 
-Backend next:
-
-- Add DynamoDB tables for scenarios, sessions, responses, and reports.
-- Add endpoints from the PRD:
-  - `GET /scenarios`
-  - `POST /sessions`
-  - `POST /responses`
-  - `GET /reports/{sessionId}`
-- Add Cognito later for real login/auth.
-- Add Secrets Manager later for LLM provider keys.
-
-Frontend next:
-
-- Replace placeholder pages with real app flows.
-- Use TanStack Query for backend calls.
-- Connect `/scenarios` page to the future scenarios endpoint.
-- Connect `/exam` page to session/response endpoints.
-- Connect `/dashboard` page to report data.
-
-For now, the main success is complete:
-
-```text
-React app exists.
-AWS backend exists.
-Frontend knows the API base URL.
-GET /health works in the cloud.
-```
+Use [milestones.md](milestones.md). It has current checklist, blocked items, immediate deploy steps, and next product milestone.

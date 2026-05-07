@@ -5,7 +5,7 @@ AI-powered training and examination platform for sales and service representativ
 ## Repo Layout
 
 - `frontend/` - Vite, React, TypeScript app.
-- `backend/` - AWS SAM app with Node.js 20 Lambda functions.
+- `backend/` - AWS SAM app with Node.js Lambda functions.
 - `docs/` - setup notes for AWS lab work.
 
 ## Requirements
@@ -14,7 +14,7 @@ AI-powered training and examination platform for sales and service representativ
 - npm 10 or newer.
 - AWS CLI v2.
 - AWS SAM CLI.
-- AWS lab profile named `salesops-lab`.
+- AWS Academy temporary credentials loaded from local `.env`.
 
 Docker is not required for the current workflow because backend verification targets the AWS lab.
 
@@ -22,10 +22,13 @@ Docker is not required for the current workflow because backend verification tar
 
 ```bash
 npm install
+set -a; source .env; set +a
 npm run dev
 ```
 
-Frontend runs on Vite's local dev server. Backend deploy flow is documented in [docs/aws-lab-setup.md](docs/aws-lab-setup.md).
+Frontend runs on Vite's local dev server. Backend deploy flow is documented in [docs/aws-lab-setup.md](docs/aws-lab-setup.md). Auth setup is documented in [docs/auth-setup.md](docs/auth-setup.md).
+
+Project status and next steps live in [docs/milestones.md](docs/milestones.md).
 
 ## Useful Commands
 
@@ -37,4 +40,10 @@ npm run sam:build
 npm run sam:deploy:guided
 ```
 
-Do not commit real AWS credentials, LLM keys, or `.env.local` files.
+## Current Product Slice
+
+- Managers create reusable personas in `/personas`.
+- Managers create scenarios in `/scenarios` and choose multiple personas.
+- Sessions, generated issues, LLM wiring, and dashboard data come later.
+
+Do not commit real AWS credentials, LLM keys, `.env`, or `.env.local` files.

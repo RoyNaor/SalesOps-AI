@@ -13,6 +13,5 @@ capabilities = "CAPABILITY_IAM"
 confirm_changeset = true
 resolve_s3 = true
 s3_prefix = "salesops-ai-dev"
-profile = "salesops-lab"
 parameter_overrides = "StageName=\"dev\""
 image_repositories = []

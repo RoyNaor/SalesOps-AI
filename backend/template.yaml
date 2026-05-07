@@ -11,7 +11,7 @@ Parameters:
 
 Globals:
   Function:
-    Runtime: nodejs20.x
+    Runtime: nodejs24.x
     Timeout: 10
     MemorySize: 128
     Architectures:
@@ -33,12 +33,116 @@ Resources:
     Properties:
       StageName: !Ref StageName
       EndpointConfiguration: REGIONAL
+      Auth:
+        Authorizers:
+          CognitoAuthorizer:
+            UserPoolArn: !GetAtt UsersUserPool.Arn
+            Identity:
+              Header: Authorization
+
+  UsersUserPool:
+    Type: AWS::Cognito::UserPool
+    Properties:
+      UserPoolName: !Sub "salesops-ai-${StageName}-users"
+      UsernameAttributes:
+        - email
+      AutoVerifiedAttributes:
+        - email
+      AdminCreateUserConfig:
+        AllowAdminCreateUserOnly: false
+      AccountRecoverySetting:
+        RecoveryMechanisms:
+          - Name: verified_email
+            Priority: 1
+      Policies:
+        PasswordPolicy:
+          MinimumLength: 8
+          RequireLowercase: true
+          RequireNumbers: true
+          RequireSymbols: false
+          RequireUppercase: true
+          TemporaryPasswordValidityDays: 7
+      Schema:
+        - Name: email
+          AttributeDataType: String
+          Mutable: true
+          Required: true
+        - Name: name
+          AttributeDataType: String
+          Mutable: true
+          Required: false
+
+  UsersUserPoolClient:
+    Type: AWS::Cognito::UserPoolClient
+    Properties:
+      ClientName: !Sub "salesops-ai-${StageName}-web"
+      UserPoolId: !Ref UsersUserPool
+      GenerateSecret: false
+      PreventUserExistenceErrors: ENABLED
+      ExplicitAuthFlows:
+        - ALLOW_USER_PASSWORD_AUTH
+        - ALLOW_REFRESH_TOKEN_AUTH
+        - ALLOW_USER_SRP_AUTH
+      SupportedIdentityProviders:
+        - COGNITO
+      AccessTokenValidity: 1
+      IdTokenValidity: 1
+      RefreshTokenValidity: 30
+      TokenValidityUnits:
+        AccessToken: hours
+        IdToken: hours
+        RefreshToken: days
+
+  UsersTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "salesops-ai-${StageName}-Users"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: userId
+          AttributeType: S
+        - AttributeName: emailLower
+          AttributeType: S
+      KeySchema:
+        - AttributeName: userId
+          KeyType: HASH
+      GlobalSecondaryIndexes:
+        - IndexName: EmailIndex
+          KeySchema:
+            - AttributeName: emailLower
+              KeyType: HASH
+          Projection:
+            ProjectionType: ALL
+
+  PersonasTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "salesops-ai-${StageName}-Personas"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: personaId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: personaId
+          KeyType: HASH
+
+  ScenariosTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "salesops-ai-${StageName}-Scenarios"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: scenarioId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: scenarioId
+          KeyType: HASH
 
   HealthFunction:
     Type: AWS::Serverless::Function
     Properties:
-      CodeUri: src/handlers/
-      Handler: health.handler
+      CodeUri: .
+      Handler: src/handlers/health.handler
       Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
       Description: Health endpoint for frontend/API wiring verification.
       Events:
@@ -49,6 +153,257 @@ Resources:
             Path: /health
             Method: GET
 
+  SignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.signup
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Creates a Cognito account and DynamoDB user profile.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        SignUpRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/signup
+            Method: POST
+
+  ConfirmSignUpFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.confirm
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Confirms a Cognito signup code and activates the user profile.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        ConfirmRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/confirm
+            Method: POST
+
+  SignInFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.signin
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Signs in with Cognito and returns app profile data.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        SignInRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/signin
+            Method: POST
+
+  RefreshFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.refresh
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Refreshes Cognito ID and access tokens.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        RefreshRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/refresh
+            Method: POST
+
+  MeFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.me
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Returns the authenticated user's DynamoDB profile.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        MeRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/me
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ListPersonasFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.listPersonas
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Lists reusable manager-authored customer personas.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        ListPersonasRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /personas
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  CreatePersonaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.createPersona
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Creates a reusable customer persona.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        CreatePersonaRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /personas
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  UpdatePersonaFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.updatePersona
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Updates a reusable customer persona.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        UpdatePersonaRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /personas/{personaId}
+            Method: PUT
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ListScenariosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.listScenarios
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Lists manager-authored scenarios.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        ListScenariosRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  CreateScenarioFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.createScenario
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Creates a scenario draft linked to personas.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        CreateScenarioRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  UpdateScenarioFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.updateScenario
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Updates a scenario draft.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        UpdateScenarioRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios/{scenarioId}
+            Method: PUT
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  PublishScenarioFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.publishScenario
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Publishes a scenario for future exams.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        PublishScenarioRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios/{scenarioId}/publish
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
 Outputs:
   ApiBaseUrl:
     Description: Base URL for frontend VITE_API_BASE_URL.
@@ -56,3 +411,18 @@ Outputs:
   HealthUrl:
     Description: Health endpoint URL.
     Value: !Sub "https://${SalesOpsApi}.execute-api.${AWS::Region}.amazonaws.com/${StageName}/health"
+  UsersTableName:
+    Description: DynamoDB user profile table.
+    Value: !Ref UsersTable
+  PersonasTableName:
+    Description: DynamoDB reusable personas table.
+    Value: !Ref PersonasTable
+  ScenariosTableName:
+    Description: DynamoDB scenario drafts and published scenarios table.
+    Value: !Ref ScenariosTable
+  UserPoolId:
+    Description: Cognito User Pool ID.
+    Value: !Ref UsersUserPool
+  UserPoolClientId:
+    Description: Cognito app client ID used by auth Lambdas.
+    Value: !Ref UsersUserPoolClient

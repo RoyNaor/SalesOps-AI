@@ -36,8 +36,12 @@ button:disabled {
 
 .app-shell {
   min-height: 100vh;
+  min-height: 100dvh;
+  height: 100vh;
+  height: 100dvh;
   display: grid;
   grid-template-columns: 276px 1fr;
+  overflow: hidden;
 }
 
 .auth-page {
@@ -138,12 +142,15 @@ button:disabled {
 }
 
 .sidebar {
+  height: 100vh;
+  height: 100dvh;
   background: #17342f;
   color: #f6f1e7;
   padding: 28px 18px;
   display: flex;
   flex-direction: column;
   gap: 34px;
+  overflow-y: auto;
 }
 
 .brand-block {
@@ -253,6 +260,9 @@ button:disabled {
 }
 
 .workspace {
+  min-width: 0;
+  height: 100vh;
+  height: 100dvh;
   padding: 32px;
   overflow: auto;
 }
@@ -394,6 +404,13 @@ label {
   gap: 8px;
   color: #33443e;
   font-weight: 800;
+}
+
+.field-help {
+  color: #65746d;
+  font-size: 0.9rem;
+  font-weight: 600;
+  line-height: 1.45;
 }
 
 input,
@@ -751,10 +768,17 @@ textarea {
     grid-template-columns: 1fr;
   }
 
+  .app-shell {
+    height: auto;
+    overflow: visible;
+  }
+
   .sidebar {
     position: sticky;
     top: 0;
     z-index: 10;
+    height: auto;
+    overflow: visible;
     padding: 14px;
   }
 
@@ -784,6 +808,7 @@ textarea {
   }
 
   .workspace {
+    height: auto;
     padding: 22px;
   }
 

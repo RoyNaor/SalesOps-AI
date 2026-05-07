@@ -65,15 +65,6 @@ export default function ScenarioBuilderPage() {
 
   const isSaving = saveMutation.isPending || publishMutation.isPending;
 
-  function togglePersona(personaId: string) {
-    setForm((current) => ({
-      ...current,
-      personaIds: current.personaIds.includes(personaId)
-        ? current.personaIds.filter((id) => id !== personaId)
-        : [...current.personaIds, personaId]
-    }));
-  }
-
   function startEdit(scenario: Scenario) {
     setError("");
     setEditingScenarioId(scenario.scenarioId);
@@ -145,28 +136,31 @@ export default function ScenarioBuilderPage() {
             />
           </label>
 
-          <fieldset className="checkbox-list">
-            <legend>Personas</legend>
-            {isLoadingPersonas ? (
-              <p className="empty-state">Loading personas...</p>
-            ) : personas.length ? (
-              personas.map((persona) => (
-                <label className="checkbox-item" key={persona.personaId}>
-                  <input
-                    type="checkbox"
-                    checked={form.personaIds.includes(persona.personaId)}
-                    onChange={() => togglePersona(persona.personaId)}
-                  />
-                  <span>
-                    <strong>{persona.name}</strong>
-                    <small>{persona.description || "No description yet."}</small>
-                  </span>
-                </label>
-              ))
-            ) : (
-              <p className="empty-state">Create personas before publishing scenarios.</p>
-            )}
-          </fieldset>
+          <label>
+            Persona
+            <select
+              value={form.personaIds[0] || ""}
+              onChange={(event) =>
+                setForm((current) => ({
+                  ...current,
+                  personaIds: event.target.value ? [event.target.value] : []
+                }))
+              }
+              disabled={isLoadingPersonas || personas.length === 0}
+            >
+              <option value="">
+                {isLoadingPersonas ? "Loading personas..." : "Choose persona"}
+              </option>
+              {personas.map((persona) => (
+                <option value={persona.personaId} key={persona.personaId}>
+                  {persona.name}
+                </option>
+              ))}
+            </select>
+            {!isLoadingPersonas && personas.length === 0 ? (
+              <span className="field-help">Create personas before publishing scenarios.</span>
+            ) : null}
+          </label>
 
           {error ? <p className="form-error">{error}</p> : null}
 

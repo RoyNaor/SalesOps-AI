@@ -1,5 +1,5 @@
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import { BarChart3, Inbox, LayoutDashboard, LogOut, Settings2, UserCircle, Users } from "lucide-react";
+import { BarChart3, Inbox, LogOut, Settings2, UserCircle, Users } from "lucide-react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth/AuthContext";
 import DashboardPage from "./pages/DashboardPage";
@@ -112,17 +112,6 @@ function ProtectedShell() {
       </aside>
 
       <main className="workspace">
-        <div className="workspace-topline">
-          <div>
-            <span className="eyebrow">AWS student lab</span>
-            <h1>Sales readiness cockpit</h1>
-          </div>
-          <div className="status-pill">
-            <LayoutDashboard aria-hidden="true" size={16} />
-            <span>React + SAM foundation</span>
-          </div>
-        </div>
-
         <Outlet />
       </main>
     </div>

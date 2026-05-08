@@ -619,6 +619,39 @@ textarea {
   gap: 12px;
 }
 
+.issue-panel {
+  display: grid;
+  gap: 14px;
+  margin-top: 22px;
+  padding-top: 20px;
+  border-top: 1px solid #ded3bd;
+}
+
+.issue-list {
+  display: grid;
+  gap: 14px;
+}
+
+.issue-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #ded3bd;
+  border-radius: 8px;
+  background: #fffdf8;
+}
+
+.issue-card-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.issue-card-title strong {
+  color: #17342f;
+}
+
 .resource-card {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;

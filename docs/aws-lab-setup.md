@@ -54,7 +54,7 @@ npm run sam:build
 npm run sam:deploy:guided
 ```
 
-This SAM template uses the AWS Academy-provided `LabRole` for Lambda, because the student lab usually blocks creating new IAM roles. It also creates Cognito auth resources plus DynamoDB `Users`, `Personas`, and `Scenarios` tables.
+This SAM template uses the AWS Academy-provided `LabRole` for Lambda, because the student lab usually blocks creating new IAM roles. It also creates Cognito auth resources plus DynamoDB `Users`, `Personas`, and `Scenarios` tables. Scenario issue generation reads an OpenAI API key from Secrets Manager.
 
 During guided deploy, keep:
 
@@ -83,16 +83,26 @@ npm run dev
 
 Open the app and check the login screen. Sign up, confirm the email code, then sign in to reach the protected app routes.
 
-Managers can create reusable personas at `/personas`, then create scenarios at `/scenarios` by selecting multiple personas.
+Managers can create reusable personas at `/personas`, then create scenarios at `/scenarios` by selecting a persona, setting issue count, publishing, and generating editable issues.
 
 After deploy, continue from [milestones.md](milestones.md).
 
-## 5. Secrets rule
+## 5. LLM secret
 
 Do not commit AWS credentials, OpenAI keys, Gemini keys, `.env`, or `.env.local`.
 
-Later, store LLM provider keys in AWS Secrets Manager under a name like:
+Store the OpenAI key in AWS Secrets Manager before generating scenario issues:
 
-```text
-salesops/dev/llm-api-keys
+```bash
+aws secretsmanager create-secret \
+  --name salesops/dev/llm-api-keys \
+  --secret-string '{"OPENAI_API_KEY":"PASTE_OPENAI_API_KEY"}'
+```
+
+If the secret already exists, update it:
+
+```bash
+aws secretsmanager put-secret-value \
+  --secret-id salesops/dev/llm-api-keys \
+  --secret-string '{"OPENAI_API_KEY":"PASTE_OPENAI_API_KEY"}'
 ```

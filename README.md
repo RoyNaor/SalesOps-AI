@@ -43,7 +43,7 @@ npm run sam:deploy:guided
 ## Current Product Slice
 
 - Managers create reusable personas in `/personas`.
-- Managers create scenarios in `/scenarios` and choose multiple personas.
-- Sessions, generated issues, LLM wiring, and dashboard data come later.
+- Managers create scenarios in `/scenarios`, set issue count, publish, and generate editable issues.
+- Sessions, scoring, and dashboard data come later.
 
 Do not commit real AWS credentials, LLM keys, `.env`, or `.env.local` files.

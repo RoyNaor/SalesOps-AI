@@ -9,7 +9,10 @@ This file is project source of truth for what is done, blocked, and next.
 - [x] Cognito auth + DynamoDB `Users` profile flow exists.
 - [x] Manager-only persona API + `/personas` page exists.
 - [x] Manager-only scenario API + `/scenarios` page exists.
-- [x] Scenarios can select multiple personas and publish.
+- [x] Scenarios can select a persona and publish.
+- [x] Managers can set per-scenario issue count.
+- [x] Local LLM issue generation API + Scenario Builder UI exists.
+- [x] Generated scenario issues are editable and stored on the scenario.
 - [x] Local `.env` placeholder exists for AWS lab credentials.
 - [x] Local checks pass: `typecheck`, `build`, `lint`, `diff --check`.
 - [x] Fresh AWS lab credentials added to `.env`.
@@ -18,6 +21,7 @@ This file is project source of truth for what is done, blocked, and next.
 - [x] Cloud `/health` smoke test passed.
 - [x] Cloud `/personas` rejects unauthenticated calls with `401`.
 - [ ] Cloud smoke test done for auth, personas, and scenarios.
+- [ ] Cloud smoke test done for issue generation.
 
 ## Immediate Next
 
@@ -45,20 +49,22 @@ aws sts get-caller-identity
 - [ ] Promote user to `manager`.
 - [ ] Sign in as manager.
 - [ ] Create persona.
-- [ ] Create scenario with multiple personas.
+- [ ] Create scenario with issue count.
 - [ ] Publish scenario.
+- [ ] Create or update `salesops/dev/llm-api-keys` with `OPENAI_API_KEY`.
+- [ ] Generate scenario issues.
+- [ ] Edit generated issue text.
 
 4. When smoke works, commit or publish changes.
 
 ## Next Product Milestone
 
-Build LLM issue generation from published scenario + selected personas.
+Build rep exam sessions from published scenarios and generated issues.
 
-- [ ] Add LLM provider secret in AWS Secrets Manager.
-- [ ] Add issue generation endpoint for managers.
-- [ ] Store generated issues for scenario.
-- [ ] Show generated issues in Scenario Builder.
-- [ ] Let manager edit issue text before exam use.
+- [ ] Add exam session API for reps.
+- [ ] Load generated issues into rep inbox.
+- [ ] Save rep responses.
+- [ ] Keep scoring/evaluation for next milestone.
 
 ## Later Milestones
 

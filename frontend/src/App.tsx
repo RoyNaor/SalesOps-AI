@@ -1,5 +1,6 @@
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import { BarChart3, Inbox, LayoutDashboard, LogOut, Settings2, UserCircle, Users } from "lucide-react";
+import { BarChart3, BookOpen, ChevronDown, Inbox, LogOut, Settings2, UserCircle, UserCog, Users } from "lucide-react";
+import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth/AuthContext";
 import DashboardPage from "./pages/DashboardPage";
@@ -8,13 +9,18 @@ import LoginPage from "./pages/LoginPage";
 import PersonasPage from "./pages/PersonasPage";
 import ScenarioBuilderPage from "./pages/ScenarioBuilderPage";
 import SignupPage from "./pages/SignupPage";
+import UsersPage from "./pages/UsersPage";
 
 const repNavItems = [{ to: "/exam", label: "Exam Inbox", icon: Inbox }];
 
 const managerNavItems = [
+  { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
+  { to: "/users", label: "Users", icon: UserCog }
+];
+
+const contentLibraryItems = [
   { to: "/personas", label: "Personas", icon: Users },
-  { to: "/scenarios", label: "Scenarios", icon: Settings2 },
-  { to: "/dashboard", label: "Dashboard", icon: BarChart3 }
+  { to: "/scenarios", label: "Scenarios", icon: Settings2 }
 ];
 
 function homePathForRole(role?: string) {
@@ -71,7 +77,15 @@ function RequireManager({ children }: { children: ReactNode }) {
 
 function ProtectedShell() {
   const { user, signOut } = useAuth();
-  const navItems = user?.role === "manager" ? [...repNavItems, ...managerNavItems] : repNavItems;
+  const location = useLocation();
+  const isContentLibraryActive = contentLibraryItems.some((item) => location.pathname.startsWith(item.to));
+  const [isContentLibraryOpen, setContentLibraryOpen] = useState(isContentLibraryActive);
+
+  useEffect(() => {
+    if (isContentLibraryActive) {
+      setContentLibraryOpen(true);
+    }
+  }, [isContentLibraryActive]);
 
   return (
     <div className="app-shell">
@@ -85,7 +99,7 @@ function ProtectedShell() {
         </div>
 
         <nav className="nav-stack">
-          {navItems.map((item) => {
+          {repNavItems.map((item) => {
             const Icon = item.icon;
             return (
               <NavLink key={item.to} to={item.to} className="nav-link">
@@ -94,6 +108,46 @@ function ProtectedShell() {
               </NavLink>
             );
           })}
+
+          {user?.role === "manager" ? (
+            <div className={`nav-group ${isContentLibraryOpen ? "open" : ""}`}>
+              <button
+                aria-expanded={isContentLibraryOpen}
+                className={`nav-link nav-parent ${isContentLibraryActive ? "active" : ""}`}
+                type="button"
+                onClick={() => setContentLibraryOpen((current) => !current)}
+              >
+                <BookOpen aria-hidden="true" size={18} />
+                <span>Content Library</span>
+                <ChevronDown aria-hidden="true" className="nav-caret" size={16} />
+              </button>
+              <div className="nav-sublist">
+                <div>
+                  {contentLibraryItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <NavLink key={item.to} to={item.to} className="nav-link nav-subitem">
+                        <Icon aria-hidden="true" size={17} />
+                        <span>{item.label}</span>
+                      </NavLink>
+                    );
+                  })}
+                </div>
+              </div>
+            </div>
+          ) : null}
+
+          {user?.role === "manager"
+            ? managerNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink key={item.to} to={item.to} className="nav-link">
+                    <Icon aria-hidden="true" size={18} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })
+            : null}
         </nav>
 
         <div className="sidebar-footer">
@@ -112,17 +166,6 @@ function ProtectedShell() {
       </aside>
 
       <main className="workspace">
-        <div className="workspace-topline">
-          <div>
-            <span className="eyebrow">AWS student lab</span>
-            <h1>Sales readiness cockpit</h1>
-          </div>
-          <div className="status-pill">
-            <LayoutDashboard aria-hidden="true" size={16} />
-            <span>React + SAM foundation</span>
-          </div>
-        </div>
-
         <Outlet />
       </main>
     </div>
@@ -170,6 +213,14 @@ export default function App() {
           element={
             <RequireManager>
               <ScenarioBuilderPage />
+            </RequireManager>
+          }
+        />
+        <Route
+          path="/users"
+          element={
+            <RequireManager>
+              <UsersPage />
             </RequireManager>
           }
         />

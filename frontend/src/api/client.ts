@@ -60,6 +60,10 @@ export type MeResponse = {
   user: UserProfile;
 };
 
+export type UsersResponse = {
+  users: UserProfile[];
+};
+
 export type PersonaStatus = "ACTIVE" | "ARCHIVED" | string;
 
 export type Persona = {
@@ -79,12 +83,28 @@ export type PersonaFormPayload = {
 };
 
 export type ScenarioStatus = "DRAFT" | "PUBLISHED" | string;
+export type ScenarioIssueDifficulty = "EASY" | "MEDIUM" | "HARD";
+
+export type ScenarioIssue = {
+  issueId: string;
+  personaId: string;
+  customerName: string;
+  subject: string;
+  message: string;
+  difficulty: ScenarioIssueDifficulty;
+  status: "DRAFT" | string;
+  createdAt: string;
+  updatedAt: string;
+};
 
 export type Scenario = {
   scenarioId: string;
   title: string;
   description: string;
   personaIds: string[];
+  issueCount: number;
+  issues: ScenarioIssue[];
+  issuesGeneratedAt?: string;
   status: ScenarioStatus;
   createdAt: string;
   updatedAt: string;
@@ -94,6 +114,14 @@ export type ScenarioFormPayload = {
   title: string;
   description: string;
   personaIds: string[];
+  issueCount: number;
+};
+
+export type ScenarioIssueUpdatePayload = {
+  customerName: string;
+  subject: string;
+  message: string;
+  difficulty: ScenarioIssueDifficulty;
 };
 
 export type PersonasResponse = {
@@ -172,6 +200,11 @@ export async function fetchCurrentUser(): Promise<UserProfile> {
   return data.user;
 }
 
+export async function fetchUsers(): Promise<UserProfile[]> {
+  const { data } = await apiClient.get<UsersResponse>("/users");
+  return data.users;
+}
+
 export async function fetchPersonas(): Promise<Persona[]> {
   const { data } = await apiClient.get<PersonasResponse>("/personas");
   return data.personas;
@@ -204,5 +237,23 @@ export async function updateScenario(scenarioId: string, payload: ScenarioFormPa
 
 export async function publishScenario(scenarioId: string): Promise<Scenario> {
   const { data } = await apiClient.post<ScenarioResponse>(`/scenarios/${scenarioId}/publish`);
+  return data.scenario;
+}
+
+export async function generateScenarioIssues(scenarioId: string): Promise<Scenario> {
+  const { data } = await apiClient.post<ScenarioResponse>(
+    `/scenarios/${scenarioId}/issues/generate`,
+    undefined,
+    { timeout: 30000 }
+  );
+  return data.scenario;
+}
+
+export async function updateScenarioIssue(
+  scenarioId: string,
+  issueId: string,
+  payload: ScenarioIssueUpdatePayload
+): Promise<Scenario> {
+  const { data } = await apiClient.put<ScenarioResponse>(`/scenarios/${scenarioId}/issues/${issueId}`, payload);
   return data.scenario;
 }

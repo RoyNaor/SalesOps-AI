@@ -8,6 +8,14 @@ Parameters:
     Default: dev
     AllowedPattern: "^[a-z0-9-]+$"
     Description: API Gateway stage name.
+  LlmSecretName:
+    Type: String
+    Default: salesops/dev/llm-api-keys
+    Description: Secrets Manager secret containing LLM provider keys.
+  OpenAiModel:
+    Type: String
+    Default: gpt-5.4-mini
+    Description: OpenAI model used for scenario issue generation.
 
 Globals:
   Function:
@@ -250,6 +258,28 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
+  ListUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.listUsers
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Lists DynamoDB user profiles for managers.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        ListUsersRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /users
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   ListPersonasFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -401,6 +431,54 @@ Resources:
             RestApiId: !Ref SalesOpsApi
             Path: /scenarios/{scenarioId}/publish
             Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  GenerateScenarioIssuesFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.generateScenarioIssues
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Generates editable inbox issues for a published scenario.
+      Timeout: 25
+      MemorySize: 256
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          LLM_SECRET_NAME: !Ref LlmSecretName
+          OPENAI_MODEL: !Ref OpenAiModel
+      Events:
+        GenerateScenarioIssuesRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios/{scenarioId}/issues/generate
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  UpdateScenarioIssueFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.updateScenarioIssue
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Updates an editable generated issue for a scenario.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        UpdateScenarioIssueRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios/{scenarioId}/issues/{issueId}
+            Method: PUT
             Auth:
               Authorizer: CognitoAuthorizer
 

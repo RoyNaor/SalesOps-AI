@@ -258,6 +258,28 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
+  ListUsersFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.listUsers
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Lists DynamoDB user profiles for managers.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        ListUsersRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /users
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   ListPersonasFunction:
     Type: AWS::Serverless::Function
     Properties:

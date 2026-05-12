@@ -60,6 +60,10 @@ export type MeResponse = {
   user: UserProfile;
 };
 
+export type UsersResponse = {
+  users: UserProfile[];
+};
+
 export type PersonaStatus = "ACTIVE" | "ARCHIVED" | string;
 
 export type Persona = {
@@ -194,6 +198,11 @@ export async function refreshAuthSession(refreshToken: string): Promise<RefreshR
 export async function fetchCurrentUser(): Promise<UserProfile> {
   const { data } = await apiClient.get<MeResponse>("/auth/me");
   return data.user;
+}
+
+export async function fetchUsers(): Promise<UserProfile[]> {
+  const { data } = await apiClient.get<UsersResponse>("/users");
+  return data.users;
 }
 
 export async function fetchPersonas(): Promise<Persona[]> {

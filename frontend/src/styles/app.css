@@ -210,6 +210,65 @@ button:disabled {
   transition: background 160ms ease, color 160ms ease, transform 160ms ease;
 }
 
+.nav-parent {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #dce9e2;
+  font-weight: 700;
+}
+
+.nav-caret {
+  margin-left: auto;
+  transition: transform 220ms ease, color 160ms ease;
+}
+
+.nav-group {
+  display: grid;
+  min-width: 0;
+}
+
+.nav-sublist {
+  display: grid;
+  grid-template-rows: 0fr;
+  opacity: 0;
+  transform: translateY(-4px);
+  transition: grid-template-rows 220ms ease, opacity 180ms ease, transform 220ms ease;
+}
+
+.nav-sublist > div {
+  min-height: 0;
+  display: grid;
+  gap: 6px;
+  overflow: hidden;
+  padding-left: 14px;
+}
+
+.nav-group.open .nav-sublist {
+  grid-template-rows: 1fr;
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.nav-group.open .nav-parent {
+  background: #244b43;
+  color: #fff7e8;
+}
+
+.nav-group.open .nav-sublist > div {
+  padding-top: 6px;
+}
+
+.nav-group.open .nav-caret {
+  transform: rotate(180deg);
+}
+
+.nav-subitem {
+  min-height: 38px;
+  padding-left: 12px;
+  font-size: 0.94rem;
+}
+
 .nav-link:hover,
 .nav-link.active {
   background: #244b43;
@@ -850,6 +909,10 @@ textarea {
   white-space: nowrap;
 }
 
+.users-command-bar {
+  grid-template-columns: minmax(260px, 1fr) auto;
+}
+
 .scenario-table-shell,
 .scenario-detail-panel {
   background: #fffaf0;
@@ -1029,6 +1092,29 @@ textarea {
   font-weight: 700;
   line-height: 1.25;
   text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.persona-table-text {
+  display: -webkit-box;
+  margin: 0;
+  overflow: hidden;
+  color: #52635c;
+  font-weight: 650;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+}
+
+.table-code {
+  display: inline-block;
+  max-width: 100%;
+  overflow: hidden;
+  color: #52635c;
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  font-size: 0.74rem;
+  text-overflow: ellipsis;
+  vertical-align: middle;
   white-space: nowrap;
 }
 
@@ -1540,8 +1626,23 @@ textarea {
     grid-template-columns: repeat(auto-fit, minmax(44px, 1fr));
   }
 
+  .nav-group,
+  .nav-sublist,
+  .nav-sublist > div {
+    display: contents;
+  }
+
+  .nav-caret {
+    display: none;
+  }
+
   .nav-link {
     justify-content: center;
+  }
+
+  .nav-subitem {
+    min-height: 44px;
+    padding-left: 12px;
   }
 
   .nav-link span {

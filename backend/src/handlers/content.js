@@ -114,6 +114,19 @@ function toProfile(item) {
   };
 }
 
+function itemToUser(item) {
+  return {
+    userId: item.userId?.S || "",
+    email: item.email?.S || "",
+    emailLower: item.emailLower?.S || "",
+    fullName: item.fullName?.S || "",
+    role: item.role?.S || "rep",
+    status: item.status?.S || "ACTIVE",
+    createdAt: item.createdAt?.S || "",
+    updatedAt: item.updatedAt?.S || ""
+  };
+}
+
 async function requireManager(event) {
   if (!usersTableName || !personasTableName || !scenariosTableName) {
     throw Object.assign(new Error("Content service is not configured."), { statusCode: 500 });
@@ -509,6 +522,16 @@ exports.listPersonas = async (event) => {
     await requireManager(event);
     const personas = sortNewestFirst((await scanTable(personasTableName)).map(itemToPersona));
     return json(200, { personas });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.listUsers = async (event) => {
+  try {
+    await requireManager(event);
+    const users = sortNewestFirst((await scanTable(usersTableName)).map(itemToUser));
+    return json(200, { users });
   } catch (error) {
     return mapError(error);
   }

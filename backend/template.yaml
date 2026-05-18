@@ -146,6 +146,28 @@ Resources:
         - AttributeName: scenarioId
           KeyType: HASH
 
+  ExamSessionsTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      TableName: !Sub "salesops-ai-${StageName}-ExamSessions"
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: sessionId
+          AttributeType: S
+        - AttributeName: recordId
+          AttributeType: S
+      KeySchema:
+        - AttributeName: sessionId
+          KeyType: HASH
+        - AttributeName: recordId
+          KeyType: RANGE
+
+  ExamIssueReleaseQueue:
+    Type: AWS::SQS::Queue
+    Properties:
+      QueueName: !Sub "salesops-ai-${StageName}-exam-issue-release"
+      VisibilityTimeout: 30
+
   HealthFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -482,6 +504,136 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
+  ListExamScenariosFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.listExamScenarios
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Lists published scenarios available to reps for exams.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+      Events:
+        ListExamScenariosRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /exam/scenarios
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  CreateExamSessionFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.createExamSession
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Creates a rep exam session and schedules issue arrivals.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+          EXAM_ISSUE_RELEASE_QUEUE_URL: !Ref ExamIssueReleaseQueue
+      Events:
+        CreateExamSessionRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /exam/sessions
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  GetExamSessionPulseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.getExamSessionPulse
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Returns visible exam issues and remaining session time.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+      Events:
+        GetExamSessionPulseRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /exam/sessions/{sessionId}/pulse
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  SubmitExamIssueResponseFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.submitExamIssueResponse
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Saves a rep response on a visible exam issue.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+      Events:
+        SubmitExamIssueResponseRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /exam/sessions/{sessionId}/issues/{issueId}/responses
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  MarkExamIssueDoneFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.markExamIssueDone
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Marks a rep exam issue done after responses are submitted.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+      Events:
+        MarkExamIssueDoneRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /exam/sessions/{sessionId}/issues/{issueId}/done
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ReleaseExamIssueFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.releaseExamIssue
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Marks scheduled exam issues visible when SQS delay expires.
+      Environment:
+        Variables:
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+      Events:
+        ReleaseExamIssueQueue:
+          Type: SQS
+          Properties:
+            Queue: !GetAtt ExamIssueReleaseQueue.Arn
+            BatchSize: 10
+            FunctionResponseTypes:
+              - ReportBatchItemFailures
+
 Outputs:
   ApiBaseUrl:
     Description: Base URL for frontend VITE_API_BASE_URL.
@@ -498,6 +650,12 @@ Outputs:
   ScenariosTableName:
     Description: DynamoDB scenario drafts and published scenarios table.
     Value: !Ref ScenariosTable
+  ExamSessionsTableName:
+    Description: DynamoDB rep exam sessions table.
+    Value: !Ref ExamSessionsTable
+  ExamIssueReleaseQueueUrl:
+    Description: SQS queue URL for delayed exam issue releases.
+    Value: !Ref ExamIssueReleaseQueue
   UserPoolId:
     Description: Cognito User Pool ID.
     Value: !Ref UsersUserPool

@@ -110,6 +110,47 @@ export type Scenario = {
   updatedAt: string;
 };
 
+export type ExamScenarioSummary = {
+  scenarioId: string;
+  title: string;
+  description: string;
+  issueCount: number;
+  generatedIssueCount: number;
+};
+
+export type ExamSession = {
+  sessionId: string;
+  scenarioId: string;
+  title: string;
+  description: string;
+  durationSeconds: number;
+  totalIssues: number;
+  startedAt: string;
+  endsAt: string;
+  status: "ACTIVE" | "ENDED" | string;
+  remainingSeconds?: number;
+};
+
+export type ExamIssueResponse = {
+  responseId: string;
+  message: string;
+  createdAt: string;
+};
+
+export type ExamIssue = {
+  issueId: string;
+  customerName: string;
+  subject: string;
+  message: string;
+  difficulty: ScenarioIssueDifficulty;
+  status: "PENDING" | "VISIBLE" | "DONE" | string;
+  orderIndex: number;
+  releaseAt: string;
+  visibleAt: string;
+  doneAt: string;
+  responses: ExamIssueResponse[];
+};
+
 export type ScenarioFormPayload = {
   title: string;
   description: string;
@@ -138,6 +179,28 @@ export type ScenariosResponse = {
 
 export type ScenarioResponse = {
   scenario: Scenario;
+};
+
+export type ExamScenariosResponse = {
+  scenarios: ExamScenarioSummary[];
+  durationSeconds: number;
+};
+
+export type ExamSessionResponse = {
+  session: ExamSession;
+};
+
+export type ExamPulseResponse = {
+  session: ExamSession & { remainingSeconds: number };
+  issues: ExamIssue[];
+};
+
+export type ExamIssueResponsePayload = {
+  message: string;
+};
+
+export type ExamIssueResponseResult = {
+  issue: ExamIssue;
 };
 
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
@@ -223,6 +286,40 @@ export async function updatePersona(personaId: string, payload: PersonaFormPaylo
 export async function fetchScenarios(): Promise<Scenario[]> {
   const { data } = await apiClient.get<ScenariosResponse>("/scenarios");
   return data.scenarios;
+}
+
+export async function fetchExamScenarios(): Promise<ExamScenariosResponse> {
+  const { data } = await apiClient.get<ExamScenariosResponse>("/exam/scenarios");
+  return data;
+}
+
+export async function createExamSession(scenarioId: string): Promise<ExamSessionResponse> {
+  const { data } = await apiClient.post<ExamSessionResponse>("/exam/sessions", { scenarioId });
+  return data;
+}
+
+export async function fetchExamSessionPulse(sessionId: string): Promise<ExamPulseResponse> {
+  const { data } = await apiClient.get<ExamPulseResponse>(`/exam/sessions/${sessionId}/pulse`);
+  return data;
+}
+
+export async function submitExamIssueResponse(
+  sessionId: string,
+  issueId: string,
+  payload: ExamIssueResponsePayload
+): Promise<ExamIssue> {
+  const { data } = await apiClient.post<ExamIssueResponseResult>(
+    `/exam/sessions/${sessionId}/issues/${issueId}/responses`,
+    payload
+  );
+  return data.issue;
+}
+
+export async function markExamIssueDone(sessionId: string, issueId: string): Promise<ExamIssue> {
+  const { data } = await apiClient.post<ExamIssueResponseResult>(
+    `/exam/sessions/${sessionId}/issues/${issueId}/done`
+  );
+  return data.issue;
 }
 
 export async function createScenario(payload: ScenarioFormPayload): Promise<Scenario> {

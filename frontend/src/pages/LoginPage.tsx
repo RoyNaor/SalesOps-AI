@@ -29,7 +29,7 @@ export default function LoginPage() {
     try {
       const user = await signIn(email, password);
       const returnPath = getReturnPath(location.state);
-      navigate(returnPath || (user.role === "manager" ? "/dashboard" : "/exam"), { replace: true });
+      navigate(returnPath || (user.role === "manager" ? "/dashboard" : "/exam/start"), { replace: true });
     } catch (err) {
       setError(getApiErrorMessage(err, "Sign in failed."));
     } finally {

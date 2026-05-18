@@ -113,7 +113,7 @@ aws dynamodb query \
 ## Frontend Behavior
 
 - `/login` and `/signup` render outside the app sidebar.
-- `/exam`, `/personas`, `/scenarios`, and `/dashboard` require an active session.
-- Reps can access `/exam`.
-- Managers can access `/exam`, `/personas`, `/scenarios`, and `/dashboard`.
+- `/exam/start`, `/exam/:sessionId`, `/personas`, `/scenarios`, and `/dashboard` require an active session.
+- Reps can access `/exam/start` and their own `/exam/:sessionId` session inbox.
+- Managers can access `/personas`, `/scenarios`, `/users`, and `/dashboard`.
 - Sign out clears local session storage.

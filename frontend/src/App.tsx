@@ -1,17 +1,28 @@
 import { Navigate, NavLink, Outlet, Route, Routes, useLocation } from "react-router-dom";
-import { BarChart3, BookOpen, ChevronDown, Inbox, LogOut, Settings2, UserCircle, UserCog, Users } from "lucide-react";
+import {
+  BarChart3,
+  BookOpen,
+  ChevronDown,
+  ClipboardList,
+  LogOut,
+  Settings2,
+  UserCircle,
+  UserCog,
+  Users
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useAuth } from "./auth/AuthContext";
 import DashboardPage from "./pages/DashboardPage";
 import ExamPage from "./pages/ExamPage";
+import ExamStartPage from "./pages/ExamStartPage";
 import LoginPage from "./pages/LoginPage";
 import PersonasPage from "./pages/PersonasPage";
 import ScenarioBuilderPage from "./pages/ScenarioBuilderPage";
 import SignupPage from "./pages/SignupPage";
 import UsersPage from "./pages/UsersPage";
 
-const repNavItems = [{ to: "/exam", label: "Exam Inbox", icon: Inbox }];
+const repNavItems = [{ to: "/exam/start", label: "Scenario Exam", icon: ClipboardList }];
 
 const managerNavItems = [
   { to: "/dashboard", label: "Dashboard", icon: BarChart3 },
@@ -24,7 +35,7 @@ const contentLibraryItems = [
 ];
 
 function homePathForRole(role?: string) {
-  return role === "manager" ? "/dashboard" : "/exam";
+  return role === "manager" ? "/dashboard" : "/exam/start";
 }
 
 function RouteLoading() {
@@ -65,11 +76,27 @@ function PublicOnly({ children }: { children: ReactNode }) {
   return <>{children}</>;
 }
 
+function HomeRedirect() {
+  const { user } = useAuth();
+
+  return <Navigate to={homePathForRole(user?.role)} replace />;
+}
+
 function RequireManager({ children }: { children: ReactNode }) {
   const { user } = useAuth();
 
   if (user?.role !== "manager") {
-    return <Navigate to="/exam" replace />;
+    return <Navigate to="/exam/start" replace />;
+  }
+
+  return <>{children}</>;
+}
+
+function RequireRep({ children }: { children: ReactNode }) {
+  const { user } = useAuth();
+
+  if (user?.role === "manager") {
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -99,15 +126,17 @@ function ProtectedShell() {
         </div>
 
         <nav className="nav-stack">
-          {repNavItems.map((item) => {
-            const Icon = item.icon;
-            return (
-              <NavLink key={item.to} to={item.to} className="nav-link">
-                <Icon aria-hidden="true" size={18} />
-                <span>{item.label}</span>
-              </NavLink>
-            );
-          })}
+          {user?.role !== "manager"
+            ? repNavItems.map((item) => {
+                const Icon = item.icon;
+                return (
+                  <NavLink key={item.to} to={item.to} className="nav-link">
+                    <Icon aria-hidden="true" size={18} />
+                    <span>{item.label}</span>
+                  </NavLink>
+                );
+              })
+            : null}
 
           {user?.role === "manager" ? (
             <div className={`nav-group ${isContentLibraryOpen ? "open" : ""}`}>
@@ -192,14 +221,32 @@ export default function App() {
         }
       />
       <Route
+        path="/exam/start"
+        element={
+          <RequireAuth>
+            <RequireRep>
+              <ExamStartPage />
+            </RequireRep>
+          </RequireAuth>
+        }
+      />
+      <Route
         element={
           <RequireAuth>
             <ProtectedShell />
           </RequireAuth>
         }
       >
-        <Route path="/" element={<Navigate to="/exam" replace />} />
-        <Route path="/exam" element={<ExamPage />} />
+        <Route path="/" element={<HomeRedirect />} />
+        <Route path="/exam" element={<Navigate to="/exam/start" replace />} />
+        <Route
+          path="/exam/:sessionId"
+          element={
+            <RequireRep>
+              <ExamPage />
+            </RequireRep>
+          }
+        />
         <Route
           path="/personas"
           element={

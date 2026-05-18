@@ -4,24 +4,33 @@ const {
   DynamoDBClient,
   GetItemCommand,
   PutItemCommand,
+  QueryCommand,
   ScanCommand
 } = require("@aws-sdk/client-dynamodb");
 const { GetSecretValueCommand, SecretsManagerClient } = require("@aws-sdk/client-secrets-manager");
+const { SendMessageCommand, SQSClient } = require("@aws-sdk/client-sqs");
 const { randomUUID } = require("crypto");
 
 const region = process.env.AWS_REGION || process.env.AWS_DEFAULT_REGION || "us-east-1";
 const usersTableName = process.env.USERS_TABLE_NAME;
 const personasTableName = process.env.PERSONAS_TABLE_NAME;
 const scenariosTableName = process.env.SCENARIOS_TABLE_NAME;
+const examSessionsTableName = process.env.EXAM_SESSIONS_TABLE_NAME;
+const examIssueReleaseQueueUrl = process.env.EXAM_ISSUE_RELEASE_QUEUE_URL;
 const llmSecretName = process.env.LLM_SECRET_NAME || "salesops/dev/llm-api-keys";
 const openAiModel = process.env.OPENAI_MODEL || "gpt-5.4-mini";
 const defaultIssueCount = 5;
 const minIssueCount = 1;
 const maxIssueCount = 20;
+const examDurationSeconds = 180;
+const maxExamResponseLength = 4000;
+const examMetaRecordId = "META";
+const examIssueRecordPrefix = "ISSUE#";
 const issueDifficulties = new Set(["EASY", "MEDIUM", "HARD"]);
 
 const dynamodb = new DynamoDBClient({ region });
 const secretsManager = new SecretsManagerClient({ region });
+const sqs = new SQSClient({ region });
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -154,6 +163,46 @@ async function requireManager(event) {
   return profile;
 }
 
+async function requireActiveUser(event) {
+  if (!usersTableName) {
+    throw Object.assign(new Error("Content service is not configured."), { statusCode: 500 });
+  }
+
+  const userId = event.requestContext?.authorizer?.claims?.sub;
+  if (!userId) {
+    throw Object.assign(new Error("Missing authenticated user."), { statusCode: 401 });
+  }
+
+  const result = await dynamodb.send(
+    new GetItemCommand({
+      TableName: usersTableName,
+      Key: {
+        userId: { S: userId }
+      }
+    })
+  );
+
+  const profile = toProfile(result.Item);
+  if (!profile || profile.status !== "ACTIVE") {
+    throw Object.assign(new Error("Active user required."), { statusCode: 403 });
+  }
+
+  return profile;
+}
+
+async function requireRep(event) {
+  if (!scenariosTableName || !examSessionsTableName) {
+    throw Object.assign(new Error("Exam service is not configured."), { statusCode: 500 });
+  }
+
+  const profile = await requireActiveUser(event);
+  if (profile.role !== "rep") {
+    throw Object.assign(new Error("Rep access required."), { statusCode: 403 });
+  }
+
+  return profile;
+}
+
 function personaToItem(persona) {
   return {
     personaId: { S: persona.personaId },
@@ -242,6 +291,308 @@ function itemToScenario(item) {
     createdAt: item.createdAt?.S || "",
     updatedAt: item.updatedAt?.S || ""
   };
+}
+
+function examScenarioSummary(scenario) {
+  return {
+    scenarioId: scenario.scenarioId,
+    title: scenario.title,
+    description: scenario.description,
+    issueCount: scenario.issueCount,
+    generatedIssueCount: scenario.issues.length
+  };
+}
+
+function examMetaToItem(meta) {
+  return {
+    sessionId: { S: meta.sessionId },
+    recordId: { S: examMetaRecordId },
+    userId: { S: meta.userId },
+    scenarioId: { S: meta.scenarioId },
+    title: { S: meta.title },
+    description: { S: meta.description },
+    durationSeconds: { N: String(meta.durationSeconds) },
+    totalIssues: { N: String(meta.totalIssues) },
+    sessionStatus: { S: meta.status },
+    startedAt: { S: meta.startedAt },
+    endsAt: { S: meta.endsAt },
+    createdAt: { S: meta.createdAt },
+    updatedAt: { S: meta.updatedAt }
+  };
+}
+
+function itemToExamMeta(item) {
+  return {
+    sessionId: item.sessionId?.S || "",
+    userId: item.userId?.S || "",
+    scenarioId: item.scenarioId?.S || "",
+    title: item.title?.S || "",
+    description: item.description?.S || "",
+    durationSeconds: Number(item.durationSeconds?.N || examDurationSeconds),
+    totalIssues: Number(item.totalIssues?.N || 0),
+    status: item.sessionStatus?.S || "ACTIVE",
+    startedAt: item.startedAt?.S || "",
+    endsAt: item.endsAt?.S || "",
+    createdAt: item.createdAt?.S || "",
+    updatedAt: item.updatedAt?.S || ""
+  };
+}
+
+function examIssueToItem(sessionId, issue, orderIndex, releaseAt, isVisible, now) {
+  return {
+    sessionId: { S: sessionId },
+    recordId: { S: `${examIssueRecordPrefix}${issue.issueId}` },
+    issueId: { S: issue.issueId },
+    customerName: { S: issue.customerName },
+    subject: { S: issue.subject },
+    message: { S: issue.message },
+    difficulty: { S: issue.difficulty },
+    orderIndex: { N: String(orderIndex) },
+    releaseAt: { S: releaseAt },
+    issueStatus: { S: isVisible ? "VISIBLE" : "PENDING" },
+    isVisible: { BOOL: isVisible },
+    visibleAt: { S: isVisible ? now : "" },
+    doneAt: { S: "" },
+    responses: { L: [] },
+    createdAt: { S: now },
+    updatedAt: { S: now }
+  };
+}
+
+function examResponseToItem(response) {
+  return {
+    M: {
+      responseId: { S: response.responseId },
+      message: { S: response.message },
+      createdAt: { S: response.createdAt }
+    }
+  };
+}
+
+function itemToExamResponses(item) {
+  return (item.responses?.L || [])
+    .map((response) => response.M)
+    .filter(Boolean)
+    .map((response) => ({
+      responseId: response.responseId?.S || "",
+      message: response.message?.S || "",
+      createdAt: response.createdAt?.S || ""
+    }))
+    .filter((response) => response.responseId && response.message);
+}
+
+function itemToExamIssue(item) {
+  return {
+    issueId: item.issueId?.S || "",
+    customerName: item.customerName?.S || "",
+    subject: item.subject?.S || "",
+    message: item.message?.S || "",
+    difficulty: item.difficulty?.S || "MEDIUM",
+    status: item.issueStatus?.S || "PENDING",
+    orderIndex: Number(item.orderIndex?.N || 0),
+    releaseAt: item.releaseAt?.S || "",
+    visibleAt: item.visibleAt?.S || "",
+    doneAt: item.doneAt?.S || "",
+    responses: itemToExamResponses(item)
+  };
+}
+
+function issueRecordId(issueId) {
+  return `${examIssueRecordPrefix}${issueId}`;
+}
+
+function isExamIssueItem(item) {
+  return String(item.recordId?.S || "").startsWith(examIssueRecordPrefix);
+}
+
+async function queryExamSession(sessionId) {
+  const result = await dynamodb.send(
+    new QueryCommand({
+      TableName: examSessionsTableName,
+      KeyConditionExpression: "sessionId = :sessionId",
+      ExpressionAttributeValues: {
+        ":sessionId": { S: sessionId }
+      }
+    })
+  );
+
+  return result.Items || [];
+}
+
+async function markExamIssueVisible(sessionId, issueId, now) {
+  const current = await dynamodb.send(
+    new GetItemCommand({
+      TableName: examSessionsTableName,
+      Key: {
+        sessionId: { S: sessionId },
+        recordId: { S: issueRecordId(issueId) }
+      }
+    })
+  );
+
+  if (!current.Item) {
+    return null;
+  }
+
+  const nextItem = {
+    ...current.Item,
+    issueStatus: { S: "VISIBLE" },
+    isVisible: { BOOL: true },
+    visibleAt: current.Item.visibleAt?.S ? current.Item.visibleAt : { S: now },
+    updatedAt: { S: now }
+  };
+
+  await dynamodb.send(
+    new PutItemCommand({
+      TableName: examSessionsTableName,
+      Item: nextItem
+    })
+  );
+
+  return nextItem;
+}
+
+function isExamSessionActive(meta) {
+  const endsAtMs = Date.parse(meta.endsAt);
+  return meta.status !== "ENDED" && Number.isFinite(endsAtMs) && endsAtMs > Date.now();
+}
+
+async function getOwnedExamIssue(event) {
+  const profile = await requireRep(event);
+  const sessionId = requiredString(event.pathParameters?.sessionId);
+  const issueId = requiredString(event.pathParameters?.issueId);
+
+  if (!sessionId) {
+    throw publicError(400, "Session id is required.");
+  }
+
+  if (!issueId) {
+    throw publicError(400, "Issue id is required.");
+  }
+
+  const [metaResult, issueResult] = await Promise.all([
+    dynamodb.send(
+      new GetItemCommand({
+        TableName: examSessionsTableName,
+        Key: {
+          sessionId: { S: sessionId },
+          recordId: { S: examMetaRecordId }
+        }
+      })
+    ),
+    dynamodb.send(
+      new GetItemCommand({
+        TableName: examSessionsTableName,
+        Key: {
+          sessionId: { S: sessionId },
+          recordId: { S: issueRecordId(issueId) }
+        }
+      })
+    )
+  ]);
+
+  if (!metaResult.Item) {
+    throw publicError(404, "Exam session not found.");
+  }
+
+  const meta = itemToExamMeta(metaResult.Item);
+  if (meta.userId !== profile.userId) {
+    throw publicError(403, "Exam session access denied.");
+  }
+
+  if (!isExamSessionActive(meta)) {
+    throw publicError(400, "Exam session has ended.");
+  }
+
+  if (!issueResult.Item) {
+    throw publicError(404, "Exam issue not found.");
+  }
+
+  if (!issueResult.Item.isVisible?.BOOL) {
+    throw publicError(400, "Exam issue is not visible yet.");
+  }
+
+  if (issueResult.Item.issueStatus?.S === "DONE") {
+    throw publicError(400, "Exam issue is already done.");
+  }
+
+  return { issueItem: issueResult.Item };
+}
+
+async function revealDueExamIssues(items, now) {
+  const dueItems = items.filter(
+    (item) => isExamIssueItem(item) && !item.isVisible?.BOOL && String(item.releaseAt?.S || "") <= now
+  );
+
+  if (!dueItems.length) {
+    return items;
+  }
+
+  const updated = await Promise.all(
+    dueItems.map((item) => markExamIssueVisible(item.sessionId.S, item.issueId.S, now))
+  );
+  const updatedByRecordId = new Map(updated.filter(Boolean).map((item) => [item.recordId.S, item]));
+
+  return items.map((item) => updatedByRecordId.get(item.recordId?.S) || item);
+}
+
+function releaseDelaySeconds(index, totalIssues) {
+  if (index === 0 || totalIssues <= 1) {
+    return 0;
+  }
+
+  return Math.floor((examDurationSeconds * index) / totalIssues);
+}
+
+function examSessionResponse(meta) {
+  return {
+    sessionId: meta.sessionId,
+    scenarioId: meta.scenarioId,
+    title: meta.title,
+    description: meta.description,
+    durationSeconds: meta.durationSeconds,
+    totalIssues: meta.totalIssues,
+    startedAt: meta.startedAt,
+    endsAt: meta.endsAt,
+    status: meta.status
+  };
+}
+
+function pulseResponse(meta, issueItems) {
+  const nowMs = Date.now();
+  const endsAtMs = Date.parse(meta.endsAt);
+  const remainingSeconds = Number.isFinite(endsAtMs) ? Math.max(0, Math.ceil((endsAtMs - nowMs) / 1000)) : 0;
+  const status = remainingSeconds > 0 ? "ACTIVE" : "ENDED";
+  const visibleIssues = issueItems
+    .filter((item) => item.isVisible?.BOOL)
+    .map(itemToExamIssue)
+    .sort((a, b) => a.orderIndex - b.orderIndex);
+
+  return {
+    session: {
+      ...examSessionResponse({ ...meta, status }),
+      remainingSeconds
+    },
+    issues: visibleIssues
+  };
+}
+
+async function scheduleIssueRelease(sessionId, issueId, delaySeconds, releaseAt) {
+  if (!delaySeconds) {
+    return;
+  }
+
+  await sqs.send(
+    new SendMessageCommand({
+      QueueUrl: examIssueReleaseQueueUrl,
+      DelaySeconds: Math.min(delaySeconds, 900),
+      MessageBody: JSON.stringify({
+        sessionId,
+        issueId,
+        releaseAt
+      })
+    })
+  );
 }
 
 async function scanTable(tableName) {
@@ -630,6 +981,228 @@ exports.listScenarios = async (event) => {
   } catch (error) {
     return mapError(error);
   }
+};
+
+exports.listExamScenarios = async (event) => {
+  try {
+    await requireRep(event);
+    const scenarios = sortNewestFirst((await scanTable(scenariosTableName)).map(itemToScenario))
+      .filter((scenario) => scenario.status === "PUBLISHED" && scenario.issues.length > 0)
+      .map(examScenarioSummary);
+
+    return json(200, { scenarios, durationSeconds: examDurationSeconds });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.createExamSession = async (event) => {
+  try {
+    if (!examIssueReleaseQueueUrl) {
+      throw Object.assign(new Error("Exam issue release queue is not configured."), { statusCode: 500 });
+    }
+
+    const profile = await requireRep(event);
+    const body = parseBody(event);
+    const scenarioId = requiredString(body.scenarioId);
+
+    if (!scenarioId) {
+      return json(400, { message: "Scenario id is required." });
+    }
+
+    const scenario = await getScenarioById(scenarioId);
+    if (!scenario) {
+      return json(404, { message: "Scenario not found." });
+    }
+
+    if (scenario.status !== "PUBLISHED") {
+      return json(400, { message: "Scenario is not published." });
+    }
+
+    if (!scenario.issues.length) {
+      return json(400, { message: "Scenario has no generated issues." });
+    }
+
+    const nowMs = Date.now();
+    const now = new Date(nowMs).toISOString();
+    const sessionId = newId("session");
+    const meta = {
+      sessionId,
+      userId: profile.userId,
+      scenarioId: scenario.scenarioId,
+      title: scenario.title,
+      description: scenario.description,
+      durationSeconds: examDurationSeconds,
+      totalIssues: scenario.issues.length,
+      status: "ACTIVE",
+      startedAt: now,
+      endsAt: new Date(nowMs + examDurationSeconds * 1000).toISOString(),
+      createdAt: now,
+      updatedAt: now
+    };
+
+    const issueItems = scenario.issues.map((issue, index) => {
+      const delaySeconds = releaseDelaySeconds(index, scenario.issues.length);
+      const releaseAt = new Date(nowMs + delaySeconds * 1000).toISOString();
+      return {
+        item: examIssueToItem(sessionId, issue, index, releaseAt, delaySeconds === 0, now),
+        issueId: issue.issueId,
+        delaySeconds,
+        releaseAt
+      };
+    });
+
+    await Promise.all([
+      dynamodb.send(
+        new PutItemCommand({
+          TableName: examSessionsTableName,
+          Item: examMetaToItem(meta)
+        })
+      ),
+      ...issueItems.map(({ item }) =>
+        dynamodb.send(
+          new PutItemCommand({
+            TableName: examSessionsTableName,
+            Item: item
+          })
+        )
+      )
+    ]);
+
+    await Promise.all(
+      issueItems.map(({ issueId, delaySeconds, releaseAt }) =>
+        scheduleIssueRelease(sessionId, issueId, delaySeconds, releaseAt)
+      )
+    );
+
+    return json(201, { session: examSessionResponse(meta) });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.getExamSessionPulse = async (event) => {
+  try {
+    const profile = await requireRep(event);
+    const sessionId = requiredString(event.pathParameters?.sessionId);
+
+    if (!sessionId) {
+      return json(400, { message: "Session id is required." });
+    }
+
+    const now = new Date().toISOString();
+    const items = await revealDueExamIssues(await queryExamSession(sessionId), now);
+    const metaItem = items.find((item) => item.recordId?.S === examMetaRecordId);
+    if (!metaItem) {
+      return json(404, { message: "Exam session not found." });
+    }
+
+    const meta = itemToExamMeta(metaItem);
+    if (meta.userId !== profile.userId) {
+      return json(403, { message: "Exam session access denied." });
+    }
+
+    return json(200, pulseResponse(meta, items.filter(isExamIssueItem)));
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.submitExamIssueResponse = async (event) => {
+  try {
+    const { issueItem } = await getOwnedExamIssue(event);
+    const body = parseBody(event);
+    const message = requiredString(body.message);
+
+    if (!message) {
+      return json(400, { message: "Response message is required." });
+    }
+
+    if (message.length > maxExamResponseLength) {
+      return json(400, { message: `Response message must be ${maxExamResponseLength} characters or fewer.` });
+    }
+
+    const now = new Date().toISOString();
+    const responses = [
+      ...itemToExamResponses(issueItem),
+      {
+        responseId: newId("response"),
+        message,
+        createdAt: now
+      }
+    ];
+    const nextItem = {
+      ...issueItem,
+      issueStatus: { S: "VISIBLE" },
+      responses: { L: responses.map(examResponseToItem) },
+      updatedAt: { S: now }
+    };
+
+    await dynamodb.send(
+      new PutItemCommand({
+        TableName: examSessionsTableName,
+        Item: nextItem
+      })
+    );
+
+    return json(201, { issue: itemToExamIssue(nextItem) });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.markExamIssueDone = async (event) => {
+  try {
+    const { issueItem } = await getOwnedExamIssue(event);
+    const responses = itemToExamResponses(issueItem);
+
+    if (!responses.length) {
+      return json(400, { message: "Submit at least one response before marking this issue done." });
+    }
+
+    const now = new Date().toISOString();
+    const nextItem = {
+      ...issueItem,
+      issueStatus: { S: "DONE" },
+      doneAt: { S: now },
+      responses: { L: responses.map(examResponseToItem) },
+      updatedAt: { S: now }
+    };
+
+    await dynamodb.send(
+      new PutItemCommand({
+        TableName: examSessionsTableName,
+        Item: nextItem
+      })
+    );
+
+    return json(200, { issue: itemToExamIssue(nextItem) });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.releaseExamIssue = async (event) => {
+  const failures = [];
+
+  for (const record of event.Records || []) {
+    try {
+      const body = JSON.parse(record.body || "{}");
+      const sessionId = requiredString(body.sessionId);
+      const issueId = requiredString(body.issueId);
+
+      if (!sessionId || !issueId) {
+        throw new Error("SQS message missing sessionId or issueId.");
+      }
+
+      await markExamIssueVisible(sessionId, issueId, new Date().toISOString());
+    } catch (error) {
+      console.error(error);
+      failures.push({ itemIdentifier: record.messageId });
+    }
+  }
+
+  return { batchItemFailures: failures };
 };
 
 exports.createScenario = async (event) => {

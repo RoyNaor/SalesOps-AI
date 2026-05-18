@@ -13,6 +13,9 @@ This file is project source of truth for what is done, blocked, and next.
 - [x] Managers can set per-scenario issue count.
 - [x] Local LLM issue generation API + Scenario Builder UI exists.
 - [x] Generated scenario issues are editable and stored on the scenario.
+- [x] Rep exam start page exists at `/exam/start`.
+- [x] Rep exam session API exists with SQS-scheduled issue release pulse.
+- [x] Rep inbox loads visible session issues and appends new issues with toast notification.
 - [x] Local `.env` placeholder exists for AWS lab credentials.
 - [x] Local checks pass: `typecheck`, `build`, `lint`, `diff --check`.
 - [x] Fresh AWS lab credentials added to `.env`.
@@ -54,6 +57,9 @@ aws sts get-caller-identity
 - [ ] Create or update `salesops/dev/llm-api-keys` with `OPENAI_API_KEY`.
 - [ ] Generate scenario issues.
 - [ ] Edit generated issue text.
+- [ ] Sign in as rep.
+- [ ] Start exam from a published scenario.
+- [ ] Confirm SQS-delayed issues appear in the exam inbox over 3 minutes.
 
 4. When smoke works, commit or publish changes.
 
@@ -61,15 +67,16 @@ aws sts get-caller-identity
 
 Build rep exam sessions from published scenarios and generated issues.
 
-- [ ] Add exam session API for reps.
-- [ ] Load generated issues into rep inbox.
-- [ ] Save rep responses.
+- [x] Add exam session API for reps.
+- [x] Load generated issues into rep inbox.
+- [x] Release exam issues over time with SQS-backed pulse.
+- [x] Save rep responses.
 - [ ] Keep scoring/evaluation for next milestone.
 
 ## Later Milestones
 
 - [ ] Add rep exam sessions.
-- [ ] Add response submission.
+- [x] Add response submission.
 - [ ] Add scoring/evaluation.
 - [ ] Add manager dashboard from real session data.
 - [ ] Add reports and coaching notes.

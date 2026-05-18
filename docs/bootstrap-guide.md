@@ -51,8 +51,10 @@ Initial frontend routes:
 /login
 /signup
 /personas
-/exam
+/exam/start
+/exam/:sessionId
 /scenarios
+/users
 /dashboard
 ```
 
@@ -140,6 +142,8 @@ SAM/CloudFormation created these AWS resources:
 - DynamoDB table: `salesops-ai-dev-Users`
 - DynamoDB table: `salesops-ai-dev-Personas`
 - DynamoDB table: `salesops-ai-dev-Scenarios`
+- DynamoDB table: `salesops-ai-dev-ExamSessions`
+- SQS queue: `salesops-ai-dev-exam-issue-release`
 - Lambda permission so API Gateway can invoke the function
 - SAM managed S3 bucket for deployment artifacts
 

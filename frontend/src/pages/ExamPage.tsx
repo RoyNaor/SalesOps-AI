@@ -1,8 +1,14 @@
 import { FormEvent, useEffect, useMemo, useRef, useState } from "react";
-import { Navigate, useParams } from "react-router-dom";
+import { Navigate, useNavigate, useParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bold, CheckCircle2, Inbox, List, MailPlus, Send } from "lucide-react";
-import { fetchExamSessionPulse, getApiErrorMessage, markExamIssueDone, submitExamIssueResponse } from "../api/client";
+import { ArrowRight, Bold, CheckCircle2, Inbox, List, Loader2, MailPlus, Send } from "lucide-react";
+import {
+  createExamEvaluation,
+  fetchExamSessionPulse,
+  getApiErrorMessage,
+  markExamIssueDone,
+  submitExamIssueResponse
+} from "../api/client";
 import type { ExamIssue, ExamPulseResponse } from "../api/client";
 
 function formatTimer(seconds: number) {
@@ -30,6 +36,7 @@ function isIssueDone(issue?: ExamIssue | null) {
 
 export default function ExamPage() {
   const { sessionId } = useParams();
+  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const chatThreadRef = useRef<HTMLDivElement | null>(null);
   const [selectedIssueId, setSelectedIssueId] = useState("");
@@ -98,10 +105,21 @@ export default function ExamPage() {
     }
   });
 
+  const evaluationMutation = useMutation({
+    mutationFn: () => createExamEvaluation(sessionId || ""),
+    onSuccess: (evaluation) => {
+      queryClient.setQueryData(["exam-evaluation", sessionId], evaluation);
+      navigate(`/exam/${sessionId}/results`);
+    }
+  });
+
   const actionError =
     submitResponseMutation.error || markDoneMutation.error
       ? getApiErrorMessage(submitResponseMutation.error || markDoneMutation.error, "Exam action failed.")
       : "";
+  const evaluationError = evaluationMutation.error
+    ? getApiErrorMessage(evaluationMutation.error, "Evaluation could not start.")
+    : "";
 
   useEffect(() => {
     const interval = window.setInterval(() => setNowMs(Date.now()), 1000);
@@ -173,6 +191,14 @@ export default function ExamPage() {
     markDoneMutation.mutate(selectedIssue.issueId);
   }
 
+  function handleContinueToEvaluation() {
+    if (!sessionId || evaluationMutation.isPending) {
+      return;
+    }
+
+    evaluationMutation.mutate();
+  }
+
   if (isLoading) {
     return (
       <section className="exam-layout">
@@ -207,6 +233,33 @@ export default function ExamPage() {
 
   return (
     <section className="exam-layout">
+      {isEnded ? (
+        <div className="exam-end-overlay" role="dialog" aria-modal="true" aria-labelledby="exam-ended-title">
+          <div className="exam-end-modal">
+            <span className="eyebrow">Time is complete</span>
+            <h2 id="exam-ended-title">Exam Ended</h2>
+            <p>
+              Responses are locked. Continue to AI evaluation for final score, coaching notes, and future practice
+              ideas.
+            </p>
+            {evaluationError ? <p className="form-error">{evaluationError}</p> : null}
+            <button
+              type="button"
+              className="primary-button"
+              disabled={evaluationMutation.isPending}
+              onClick={handleContinueToEvaluation}
+            >
+              {evaluationMutation.isPending ? "Preparing evaluation..." : "Continue to Evaluation"}
+              {evaluationMutation.isPending ? (
+                <Loader2 aria-hidden="true" size={18} className="spin-icon" />
+              ) : (
+                <ArrowRight aria-hidden="true" size={18} />
+              )}
+            </button>
+          </div>
+        </div>
+      ) : null}
+
       {toastIssue ? (
         <div className="exam-toast" role="status" aria-live="polite">
           <MailPlus aria-hidden="true" size={20} />

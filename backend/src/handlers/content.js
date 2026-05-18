@@ -25,8 +25,17 @@ const maxIssueCount = 20;
 const examDurationSeconds = 180;
 const maxExamResponseLength = 4000;
 const examMetaRecordId = "META";
+const examEvaluationRecordId = "EVALUATION";
 const examIssueRecordPrefix = "ISSUE#";
+const dashboardPassScore = 80;
 const issueDifficulties = new Set(["EASY", "MEDIUM", "HARD"]);
+const evaluationRubricWeights = {
+  kindness: 0.25,
+  professionalism: 0.25,
+  resolution: 0.25,
+  clarity: 0.15,
+  helpfulIdeas: 0.1
+};
 
 const dynamodb = new DynamoDBClient({ region });
 const secretsManager = new SecretsManagerClient({ region });
@@ -397,12 +406,156 @@ function itemToExamIssue(item) {
   };
 }
 
+function clampScore(value) {
+  const score = Number(value);
+  if (!Number.isFinite(score)) {
+    return 0;
+  }
+
+  return Math.max(0, Math.min(100, Math.round(score)));
+}
+
+function normalizeRubricScore(value) {
+  const score = Number(value);
+  if (!Number.isFinite(score)) {
+    return 0;
+  }
+
+  if (score > 0 && score <= 5) {
+    return clampScore(score * 20);
+  }
+
+  return clampScore(score);
+}
+
+function cleanStringList(value, limit = 8) {
+  if (!Array.isArray(value)) {
+    return [];
+  }
+
+  return value.map((item) => requiredString(item)).filter(Boolean).slice(0, limit);
+}
+
+function stringListToAttribute(values) {
+  return {
+    L: cleanStringList(values).map((value) => ({ S: value }))
+  };
+}
+
+function attributeToStringList(attribute) {
+  return (attribute?.L || []).map((item) => item.S || "").filter(Boolean);
+}
+
+function normalizeRubric(rubric = {}) {
+  return {
+    kindness: normalizeRubricScore(rubric.kindness),
+    professionalism: normalizeRubricScore(rubric.professionalism),
+    resolution: normalizeRubricScore(rubric.resolution),
+    clarity: normalizeRubricScore(rubric.clarity),
+    helpfulIdeas: normalizeRubricScore(rubric.helpfulIdeas)
+  };
+}
+
+function weightedEvaluationScore(rubric) {
+  return clampScore(
+    Object.entries(evaluationRubricWeights).reduce(
+      (total, [key, weight]) => total + clampScore(rubric[key]) * weight,
+      0
+    )
+  );
+}
+
+function rubricToAttribute(rubric) {
+  const normalized = normalizeRubric(rubric);
+  return {
+    M: {
+      kindness: { N: String(normalized.kindness) },
+      professionalism: { N: String(normalized.professionalism) },
+      resolution: { N: String(normalized.resolution) },
+      clarity: { N: String(normalized.clarity) },
+      helpfulIdeas: { N: String(normalized.helpfulIdeas) }
+    }
+  };
+}
+
+function attributeToRubric(attribute) {
+  const item = attribute?.M || {};
+  return normalizeRubric({
+    kindness: item.kindness?.N,
+    professionalism: item.professionalism?.N,
+    resolution: item.resolution?.N,
+    clarity: item.clarity?.N,
+    helpfulIdeas: item.helpfulIdeas?.N
+  });
+}
+
+function evaluationIssueToAttribute(issue) {
+  return {
+    M: {
+      issueId: { S: issue.issueId },
+      subject: { S: issue.subject },
+      score: { N: String(clampScore(issue.score)) },
+      notes: stringListToAttribute(issue.notes),
+      suggestedAnswerIdeas: stringListToAttribute(issue.suggestedAnswerIdeas)
+    }
+  };
+}
+
+function attributeToEvaluationIssue(attribute) {
+  const item = attribute?.M || {};
+  return {
+    issueId: item.issueId?.S || "",
+    subject: item.subject?.S || "",
+    score: clampScore(item.score?.N),
+    notes: attributeToStringList(item.notes),
+    suggestedAnswerIdeas: attributeToStringList(item.suggestedAnswerIdeas)
+  };
+}
+
+function examEvaluationToItem(evaluation) {
+  return {
+    sessionId: { S: evaluation.sessionId },
+    recordId: { S: examEvaluationRecordId },
+    evaluationStatus: { S: evaluation.status },
+    score: { N: String(clampScore(evaluation.score)) },
+    evaluatedAt: { S: evaluation.evaluatedAt },
+    rubric: rubricToAttribute(evaluation.rubric),
+    aiNotes: stringListToAttribute(evaluation.aiNotes),
+    strengths: stringListToAttribute(evaluation.strengths),
+    growthAreas: stringListToAttribute(evaluation.growthAreas),
+    practiceIdeas: stringListToAttribute(evaluation.practiceIdeas),
+    issues: { L: (evaluation.issues || []).map(evaluationIssueToAttribute) },
+    createdAt: { S: evaluation.evaluatedAt },
+    updatedAt: { S: evaluation.evaluatedAt }
+  };
+}
+
+function itemToExamEvaluation(item) {
+  const rubric = attributeToRubric(item.rubric);
+  return {
+    sessionId: item.sessionId?.S || "",
+    status: item.evaluationStatus?.S || "COMPLETED",
+    score: weightedEvaluationScore(rubric),
+    evaluatedAt: item.evaluatedAt?.S || "",
+    rubric,
+    aiNotes: attributeToStringList(item.aiNotes),
+    strengths: attributeToStringList(item.strengths),
+    growthAreas: attributeToStringList(item.growthAreas),
+    practiceIdeas: attributeToStringList(item.practiceIdeas),
+    issues: (item.issues?.L || []).map(attributeToEvaluationIssue).filter((issue) => issue.issueId)
+  };
+}
+
 function issueRecordId(issueId) {
   return `${examIssueRecordPrefix}${issueId}`;
 }
 
 function isExamIssueItem(item) {
   return String(item.recordId?.S || "").startsWith(examIssueRecordPrefix);
+}
+
+function isExamEvaluationItem(item) {
+  return item.recordId?.S === examEvaluationRecordId;
 }
 
 async function queryExamSession(sessionId) {
@@ -519,6 +672,38 @@ async function getOwnedExamIssue(event) {
   return { issueItem: issueResult.Item };
 }
 
+async function getOwnedExamSession(event) {
+  const profile = await requireRep(event);
+  const sessionId = requiredString(event.pathParameters?.sessionId);
+
+  if (!sessionId) {
+    throw publicError(400, "Session id is required.");
+  }
+
+  const items = await revealDueExamIssues(await queryExamSession(sessionId), new Date().toISOString());
+  const metaItem = items.find((item) => item.recordId?.S === examMetaRecordId);
+  if (!metaItem) {
+    throw publicError(404, "Exam session not found.");
+  }
+
+  const meta = itemToExamMeta(metaItem);
+  if (meta.userId !== profile.userId) {
+    throw publicError(403, "Exam session access denied.");
+  }
+
+  return {
+    meta,
+    metaItem,
+    issueItems: items.filter(isExamIssueItem),
+    evaluationItem: items.find(isExamEvaluationItem)
+  };
+}
+
+function isExamEnded(meta) {
+  const endsAtMs = Date.parse(meta.endsAt);
+  return meta.status === "ENDED" || (Number.isFinite(endsAtMs) && endsAtMs <= Date.now());
+}
+
 async function revealDueExamIssues(items, now) {
   const dueItems = items.filter(
     (item) => isExamIssueItem(item) && !item.isVisible?.BOOL && String(item.releaseAt?.S || "") <= now
@@ -617,6 +802,164 @@ function sortNewestFirst(items) {
   return items.sort((a, b) => String(b.updatedAt || "").localeCompare(String(a.updatedAt || "")));
 }
 
+function safePercent(part, total) {
+  return total > 0 ? Math.round((part / total) * 100) : 0;
+}
+
+function averageScore(scores) {
+  if (!scores.length) {
+    return 0;
+  }
+
+  return clampScore(scores.reduce((total, score) => total + clampScore(score), 0) / scores.length);
+}
+
+function timestampForDashboard(value) {
+  const time = Date.parse(value || "");
+  return Number.isFinite(time) ? time : 0;
+}
+
+function dashboardAttemptFromMeta(meta, evaluation, user, nowMs) {
+  const ended = isExamEnded(meta) || timestampForDashboard(meta.endsAt) <= nowMs;
+  const score = evaluation ? clampScore(evaluation.score) : null;
+  const passed = score !== null && score >= dashboardPassScore;
+
+  return {
+    sessionId: meta.sessionId,
+    scenarioId: meta.scenarioId,
+    scenarioTitle: meta.title,
+    userId: meta.userId,
+    repName: user?.fullName || user?.email || "Unknown rep",
+    repEmail: user?.email || "",
+    startedAt: meta.startedAt,
+    updatedAt: meta.updatedAt,
+    ended,
+    evaluated: Boolean(evaluation),
+    score,
+    passed,
+    evaluation
+  };
+}
+
+function dashboardScenarioSummary(scenario, attempts) {
+  const evaluatedAttempts = attempts.filter((attempt) => attempt.evaluated);
+  const scores = evaluatedAttempts.map((attempt) => attempt.score).filter((score) => score !== null);
+  const passedAttempts = evaluatedAttempts.filter((attempt) => attempt.passed).length;
+
+  return {
+    scenarioId: scenario.scenarioId,
+    title: scenario.title,
+    attempts: attempts.length,
+    avgScore: averageScore(scores),
+    passRate: safePercent(passedAttempts, evaluatedAttempts.length)
+  };
+}
+
+function dashboardSummary(attempts) {
+  const activeAttempts = attempts.filter((attempt) => !attempt.ended).length;
+  const completedAttempts = attempts.filter((attempt) => attempt.ended).length;
+  const evaluatedAttempts = attempts.filter((attempt) => attempt.evaluated);
+  const passedAttempts = evaluatedAttempts.filter((attempt) => attempt.passed).length;
+  const needsEvaluation = attempts.filter((attempt) => attempt.ended && !attempt.evaluated).length;
+  const repsCount = new Set(attempts.map((attempt) => attempt.userId).filter(Boolean)).size;
+  const repsEvaluated = new Set(evaluatedAttempts.map((attempt) => attempt.userId).filter(Boolean)).size;
+  const scores = evaluatedAttempts.map((attempt) => attempt.score).filter((score) => score !== null);
+
+  return {
+    totalAttempts: attempts.length,
+    activeAttempts,
+    completedAttempts,
+    evaluatedAttempts: evaluatedAttempts.length,
+    avgSuccessScore: averageScore(scores),
+    passRate: safePercent(passedAttempts, evaluatedAttempts.length),
+    repsCount,
+    repsEvaluated,
+    needsEvaluation
+  };
+}
+
+function dashboardScoreBands(attempts) {
+  const bands = [
+    { label: "Passed", min: dashboardPassScore, max: 100, count: 0, color: "#2d6d5f" },
+    { label: "Needs coaching", min: 60, max: dashboardPassScore - 1, count: 0, color: "#d7a13e" },
+    { label: "At risk", min: 0, max: 59, count: 0, color: "#b85b3e" },
+    { label: "Not evaluated", min: null, max: null, count: 0, color: "#9a8f7d" }
+  ];
+
+  attempts.forEach((attempt) => {
+    if (attempt.score === null) {
+      bands[3].count += 1;
+      return;
+    }
+
+    if (attempt.score >= dashboardPassScore) {
+      bands[0].count += 1;
+      return;
+    }
+
+    if (attempt.score >= 60) {
+      bands[1].count += 1;
+      return;
+    }
+
+    bands[2].count += 1;
+  });
+
+  return bands.map((band) => ({
+    ...band,
+    percent: safePercent(band.count, attempts.length)
+  }));
+}
+
+function dashboardRepRows(attempts) {
+  const attemptsByUser = new Map();
+  attempts.forEach((attempt) => {
+    if (!attemptsByUser.has(attempt.userId)) {
+      attemptsByUser.set(attempt.userId, []);
+    }
+    attemptsByUser.get(attempt.userId).push(attempt);
+  });
+
+  return Array.from(attemptsByUser.values())
+    .map((repAttempts) => {
+      const sortedAttempts = [...repAttempts].sort(
+        (a, b) => timestampForDashboard(b.startedAt) - timestampForDashboard(a.startedAt)
+      );
+      const latestAttempt = sortedAttempts[0];
+      const evaluatedAttempts = repAttempts.filter((attempt) => attempt.evaluated);
+      const completedAttempts = repAttempts.filter((attempt) => attempt.ended);
+      const passedAttempts = evaluatedAttempts.filter((attempt) => attempt.passed).length;
+      const scores = evaluatedAttempts.map((attempt) => attempt.score).filter((score) => score !== null);
+      const latestEvaluatedAttempt = sortedAttempts.find((attempt) => attempt.evaluated);
+      const coachingFocus =
+        latestEvaluatedAttempt?.evaluation?.growthAreas?.[0] ||
+        (repAttempts.some((attempt) => attempt.ended && !attempt.evaluated)
+          ? "Evaluation pending"
+          : repAttempts.some((attempt) => !attempt.ended)
+            ? "Session in progress"
+            : scores.length && averageScore(scores) >= dashboardPassScore
+              ? "Maintain current approach"
+              : "No coaching signal yet");
+
+      return {
+        userId: latestAttempt.userId,
+        name: latestAttempt.repName,
+        email: latestAttempt.repEmail,
+        attempts: repAttempts.length,
+        latestScore: latestAttempt.score,
+        averageScore: averageScore(scores),
+        bestScore: scores.length ? Math.max(...scores) : null,
+        passRate: safePercent(passedAttempts, evaluatedAttempts.length),
+        completionRate: safePercent(completedAttempts.length, repAttempts.length),
+        evaluatedAttempts: evaluatedAttempts.length,
+        needsEvaluation: repAttempts.filter((attempt) => attempt.ended && !attempt.evaluated).length,
+        lastAttemptDate: latestAttempt.startedAt,
+        coachingFocus
+      };
+    })
+    .sort((a, b) => timestampForDashboard(b.lastAttemptDate) - timestampForDashboard(a.lastAttemptDate));
+}
+
 async function getScenarioById(scenarioId) {
   const result = await dynamodb.send(
     new GetItemCommand({
@@ -711,6 +1054,70 @@ function issueGenerationSchema(scenario) {
   };
 }
 
+function scoreSchema() {
+  return {
+    type: "number",
+    minimum: 0,
+    maximum: 100
+  };
+}
+
+function stringArraySchema() {
+  return {
+    type: "array",
+    items: {
+      type: "string"
+    }
+  };
+}
+
+function examEvaluationSchema(issues) {
+  const issueIds = issues.map((issue) => issue.issueId);
+  const issueCount = issueIds.length;
+  return {
+    type: "object",
+    additionalProperties: false,
+    required: ["rubric", "aiNotes", "strengths", "growthAreas", "practiceIdeas", "issues"],
+    properties: {
+      rubric: {
+        type: "object",
+        additionalProperties: false,
+        required: ["kindness", "professionalism", "resolution", "clarity", "helpfulIdeas"],
+        properties: {
+          kindness: scoreSchema(),
+          professionalism: scoreSchema(),
+          resolution: scoreSchema(),
+          clarity: scoreSchema(),
+          helpfulIdeas: scoreSchema()
+        }
+      },
+      aiNotes: stringArraySchema(),
+      strengths: stringArraySchema(),
+      growthAreas: stringArraySchema(),
+      practiceIdeas: stringArraySchema(),
+      issues: {
+        type: "array",
+        minItems: issueCount,
+        maxItems: issueCount,
+        items: {
+          type: "object",
+          additionalProperties: false,
+          required: ["issueId", "score", "notes", "suggestedAnswerIdeas"],
+          properties: {
+            issueId: {
+              type: "string",
+              enum: issueIds
+            },
+            score: scoreSchema(),
+            notes: stringArraySchema(),
+            suggestedAnswerIdeas: stringArraySchema()
+          }
+        }
+      }
+    }
+  };
+}
+
 function extractOpenAiOutputText(responseBody) {
   if (typeof responseBody.output_text === "string") {
     return responseBody.output_text;
@@ -720,7 +1127,7 @@ function extractOpenAiOutputText(responseBody) {
   for (const output of responseBody.output || []) {
     for (const content of output.content || []) {
       if (content.type === "refusal" || content.refusal) {
-        throw publicError(502, "OpenAI refused to generate issues for this scenario.");
+        throw publicError(502, "OpenAI refused to complete this request.");
       }
 
       if (typeof content.text === "string") {
@@ -813,6 +1220,130 @@ async function requestGeneratedIssues(scenario, personas) {
   return generated.issues;
 }
 
+function normalizeExamEvaluation(rawEvaluation, meta, issues) {
+  const safeEvaluation = rawEvaluation && typeof rawEvaluation === "object" ? rawEvaluation : {};
+  const rubric = normalizeRubric(safeEvaluation.rubric);
+  const rawIssues = Array.isArray(safeEvaluation.issues) ? safeEvaluation.issues : [];
+  const rawIssuesById = new Map(rawIssues.map((issue) => [requiredString(issue.issueId), issue]));
+  const evaluatedAt = new Date().toISOString();
+
+  return {
+    sessionId: meta.sessionId,
+    status: "COMPLETED",
+    score: weightedEvaluationScore(rubric),
+    evaluatedAt,
+    rubric,
+    aiNotes: cleanStringList(safeEvaluation.aiNotes),
+    strengths: cleanStringList(safeEvaluation.strengths),
+    growthAreas: cleanStringList(safeEvaluation.growthAreas),
+    practiceIdeas: cleanStringList(safeEvaluation.practiceIdeas),
+    issues: issues.map((issue) => {
+      const rawIssue = rawIssuesById.get(issue.issueId) || {};
+      return {
+        issueId: issue.issueId,
+        subject: issue.subject,
+        score: clampScore(rawIssue.score),
+        notes: cleanStringList(rawIssue.notes, 5),
+        suggestedAnswerIdeas: cleanStringList(rawIssue.suggestedAnswerIdeas, 5)
+      };
+    })
+  };
+}
+
+async function requestExamEvaluation(meta, issues) {
+  const apiKey = await getOpenAiApiKey();
+  const context = {
+    session: {
+      sessionId: meta.sessionId,
+      title: meta.title,
+      description: meta.description,
+      startedAt: meta.startedAt,
+      endsAt: meta.endsAt
+    },
+    rubric: {
+      kindness: "25%: empathy, warmth, patience, human tone.",
+      professionalism: "25%: business-safe wording, respectful confidence, no blame.",
+      resolution: "25%: directly solves or advances the customer issue with correct next steps.",
+      clarity: "15%: concise, structured, easy to understand.",
+      helpfulIdeas: "10%: proactive options, next-best actions, prevention, or useful alternatives."
+    },
+    issues: issues.map((issue) => ({
+      issueId: issue.issueId,
+      customerName: issue.customerName,
+      subject: issue.subject,
+      customerMessage: issue.message,
+      difficulty: issue.difficulty,
+      repResponses: issue.responses.map((response) => response.message)
+    }))
+  };
+
+  const body = {
+    model: openAiModel,
+    input: [
+      {
+        role: "system",
+        content:
+          "You grade sales/service exam answers. Be fair, specific, kind, and practical. Return JSON that matches the schema exactly."
+      },
+      {
+        role: "user",
+        content:
+          "Evaluate every issue. Return every rubric score and every issue score on a 0-100 scale, never a 1-5 scale. Missing rep responses should receive low issue scores and coaching notes. Multiple responses for one issue should be evaluated together. Provide future-facing coaching ideas, not only criticism.\n\nContext:\n" +
+          JSON.stringify(context)
+      }
+    ],
+    text: {
+      format: {
+        type: "json_schema",
+        name: "salesops_exam_evaluation",
+        strict: true,
+        schema: examEvaluationSchema(issues)
+      }
+    }
+  };
+
+  let response;
+  try {
+    response = await fetch("https://api.openai.com/v1/responses", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify(body),
+      signal: AbortSignal.timeout(26000)
+    });
+  } catch (error) {
+    console.error(error);
+    throw publicError(502, "OpenAI evaluation request failed.");
+  }
+
+  const responseText = await response.text();
+  if (!response.ok) {
+    console.error(responseText);
+    throw publicError(502, "OpenAI evaluation failed.");
+  }
+
+  let responseBody;
+  try {
+    responseBody = JSON.parse(responseText);
+  } catch (error) {
+    throw publicError(502, "OpenAI evaluation returned invalid JSON.");
+  }
+
+  let evaluation;
+  try {
+    evaluation = JSON.parse(extractOpenAiOutputText(responseBody));
+  } catch (error) {
+    if (error.expose) {
+      throw error;
+    }
+    throw publicError(502, "OpenAI evaluation returned malformed result data.");
+  }
+
+  return normalizeExamEvaluation(evaluation, meta, issues);
+}
+
 function normalizeGeneratedIssues(rawIssues, scenario) {
   if (!Array.isArray(rawIssues)) {
     throw publicError(502, "OpenAI issue generation returned no issues.");
@@ -883,6 +1414,89 @@ exports.listUsers = async (event) => {
     await requireManager(event);
     const users = sortNewestFirst((await scanTable(usersTableName)).map(itemToUser));
     return json(200, { users });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.getDashboard = async (event) => {
+  try {
+    await requireManager(event);
+
+    if (!examSessionsTableName) {
+      throw publicError(500, "Dashboard service is not configured.");
+    }
+
+    const scenarioFilter = requiredString(event.queryStringParameters?.scenarioId) || "ALL";
+    const selectedScenarioId = scenarioFilter === "ALL" ? "" : scenarioFilter;
+    const [sessionItems, userItems, scenarioItems] = await Promise.all([
+      scanTable(examSessionsTableName),
+      scanTable(usersTableName),
+      scanTable(scenariosTableName)
+    ]);
+    const usersById = new Map(userItems.map(itemToUser).map((user) => [user.userId, user]));
+    const scenarios = scenarioItems.map(itemToScenario);
+    const scenariosById = new Map(scenarios.map((scenario) => [scenario.scenarioId, scenario]));
+    const recordsBySessionId = new Map();
+
+    sessionItems.forEach((item) => {
+      const sessionId = item.sessionId?.S || "";
+      if (!sessionId) {
+        return;
+      }
+
+      if (!recordsBySessionId.has(sessionId)) {
+        recordsBySessionId.set(sessionId, {});
+      }
+
+      const record = recordsBySessionId.get(sessionId);
+      if (item.recordId?.S === examMetaRecordId) {
+        record.meta = itemToExamMeta(item);
+      }
+      if (item.recordId?.S === examEvaluationRecordId) {
+        record.evaluation = itemToExamEvaluation(item);
+      }
+    });
+
+    const nowMs = Date.now();
+    const allAttempts = Array.from(recordsBySessionId.values())
+      .filter((record) => record.meta?.sessionId)
+      .map((record) =>
+        dashboardAttemptFromMeta(record.meta, record.evaluation, usersById.get(record.meta.userId), nowMs)
+      );
+    const filteredAttempts = selectedScenarioId
+      ? allAttempts.filter((attempt) => attempt.scenarioId === selectedScenarioId)
+      : allAttempts;
+    const scenarioIdsFromAttempts = new Set(allAttempts.map((attempt) => attempt.scenarioId).filter(Boolean));
+    const scenarioOptions = [
+      ...scenarios.filter((scenario) => scenarioIdsFromAttempts.has(scenario.scenarioId)),
+      ...Array.from(scenarioIdsFromAttempts)
+        .filter((scenarioId) => !scenariosById.has(scenarioId))
+        .map((scenarioId) => {
+          const attempt = allAttempts.find((item) => item.scenarioId === scenarioId);
+          return {
+            scenarioId,
+            title: attempt?.scenarioTitle || "Unknown scenario"
+          };
+        })
+    ]
+      .map((scenario) =>
+        dashboardScenarioSummary(
+          scenario,
+          allAttempts.filter((attempt) => attempt.scenarioId === scenario.scenarioId)
+        )
+      )
+      .sort((a, b) => b.attempts - a.attempts || a.title.localeCompare(b.title));
+
+    return json(200, {
+      generatedAt: new Date().toISOString(),
+      selectedScenarioId: selectedScenarioId || "ALL",
+      passScore: dashboardPassScore,
+      summary: dashboardSummary(filteredAttempts),
+      scenarios: scenarioOptions,
+      reps: dashboardRepRows(filteredAttempts),
+      scoreBands: dashboardScoreBands(filteredAttempts)
+    });
   } catch (error) {
     return mapError(error);
   }
@@ -1103,6 +1717,65 @@ exports.getExamSessionPulse = async (event) => {
     }
 
     return json(200, pulseResponse(meta, items.filter(isExamIssueItem)));
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.createExamEvaluation = async (event) => {
+  try {
+    const { meta, metaItem, issueItems, evaluationItem } = await getOwnedExamSession(event);
+
+    if (evaluationItem) {
+      return json(200, { evaluation: itemToExamEvaluation(evaluationItem) });
+    }
+
+    if (!isExamEnded(meta)) {
+      return json(400, { message: "Exam is still active." });
+    }
+
+    if (!issueItems.length) {
+      return json(400, { message: "Exam has no issues to evaluate." });
+    }
+
+    const issues = issueItems.map(itemToExamIssue).sort((a, b) => a.orderIndex - b.orderIndex);
+    const evaluation = await requestExamEvaluation(meta, issues);
+    const endedMetaItem = {
+      ...metaItem,
+      sessionStatus: { S: "ENDED" },
+      updatedAt: { S: evaluation.evaluatedAt }
+    };
+
+    await Promise.all([
+      dynamodb.send(
+        new PutItemCommand({
+          TableName: examSessionsTableName,
+          Item: endedMetaItem
+        })
+      ),
+      dynamodb.send(
+        new PutItemCommand({
+          TableName: examSessionsTableName,
+          Item: examEvaluationToItem(evaluation)
+        })
+      )
+    ]);
+
+    return json(201, { evaluation });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.getExamEvaluation = async (event) => {
+  try {
+    const { evaluationItem } = await getOwnedExamSession(event);
+
+    if (!evaluationItem) {
+      return json(404, { message: "Exam evaluation not found." });
+    }
+
+    return json(200, { evaluation: itemToExamEvaluation(evaluationItem) });
   } catch (error) {
     return mapError(error);
   }

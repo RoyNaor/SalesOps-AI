@@ -15,6 +15,7 @@ import type { ReactNode } from "react";
 import { useAuth } from "./auth/AuthContext";
 import DashboardPage from "./pages/DashboardPage";
 import ExamPage from "./pages/ExamPage";
+import ExamResultsPage from "./pages/ExamResultsPage";
 import ExamStartPage from "./pages/ExamStartPage";
 import LoginPage from "./pages/LoginPage";
 import PersonasPage from "./pages/PersonasPage";
@@ -244,6 +245,14 @@ export default function App() {
           element={
             <RequireRep>
               <ExamPage />
+            </RequireRep>
+          }
+        />
+        <Route
+          path="/exam/:sessionId/results"
+          element={
+            <RequireRep>
+              <ExamResultsPage />
             </RequireRep>
           }
         />

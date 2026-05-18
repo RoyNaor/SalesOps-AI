@@ -15,7 +15,7 @@ Parameters:
   OpenAiModel:
     Type: String
     Default: gpt-5.4-mini
-    Description: OpenAI model used for scenario issue generation.
+    Description: OpenAI model used for scenario issue generation and exam evaluation.
 
 Globals:
   Function:
@@ -302,6 +302,31 @@ Resources:
             Auth:
               Authorizer: CognitoAuthorizer
 
+  GetDashboardFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.getDashboard
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Aggregates manager dashboard analytics from exam sessions.
+      Timeout: 15
+      MemorySize: 256
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+      Events:
+        GetDashboardRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /dashboard
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
   ListPersonasFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -567,6 +592,54 @@ Resources:
           Properties:
             RestApiId: !Ref SalesOpsApi
             Path: /exam/sessions/{sessionId}/pulse
+            Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  CreateExamEvaluationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.createExamEvaluation
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Evaluates a completed rep exam session with AI coaching.
+      Timeout: 30
+      MemorySize: 256
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+          LLM_SECRET_NAME: !Ref LlmSecretName
+          OPENAI_MODEL: !Ref OpenAiModel
+      Events:
+        CreateExamEvaluationRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /exam/sessions/{sessionId}/evaluation
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  GetExamEvaluationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.getExamEvaluation
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Returns persisted AI evaluation for a rep exam session.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+          EXAM_SESSIONS_TABLE_NAME: !Ref ExamSessionsTable
+      Events:
+        GetExamEvaluationRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /exam/sessions/{sessionId}/evaluation
             Method: GET
             Auth:
               Authorizer: CognitoAuthorizer

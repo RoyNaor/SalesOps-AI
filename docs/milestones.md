@@ -71,13 +71,13 @@ Build rep exam sessions from published scenarios and generated issues.
 - [x] Load generated issues into rep inbox.
 - [x] Release exam issues over time with SQS-backed pulse.
 - [x] Save rep responses.
-- [ ] Keep scoring/evaluation for next milestone.
+- [x] Add rep-facing AI scoring/evaluation results.
 
 ## Later Milestones
 
 - [ ] Add rep exam sessions.
 - [x] Add response submission.
-- [ ] Add scoring/evaluation.
+- [x] Add scoring/evaluation.
 - [ ] Add manager dashboard from real session data.
 - [ ] Add reports and coaching notes.
 

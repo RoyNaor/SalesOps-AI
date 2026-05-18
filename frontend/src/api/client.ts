@@ -203,6 +203,94 @@ export type ExamIssueResponseResult = {
   issue: ExamIssue;
 };
 
+export type ExamEvaluationRubric = {
+  kindness: number;
+  professionalism: number;
+  resolution: number;
+  clarity: number;
+  helpfulIdeas: number;
+};
+
+export type ExamEvaluationIssue = {
+  issueId: string;
+  subject: string;
+  score: number;
+  notes: string[];
+  suggestedAnswerIdeas: string[];
+};
+
+export type ExamEvaluation = {
+  sessionId: string;
+  status: "COMPLETED" | string;
+  score: number;
+  evaluatedAt: string;
+  rubric: ExamEvaluationRubric;
+  aiNotes: string[];
+  strengths: string[];
+  growthAreas: string[];
+  practiceIdeas: string[];
+  issues: ExamEvaluationIssue[];
+};
+
+export type ExamEvaluationResponse = {
+  evaluation: ExamEvaluation;
+};
+
+export type DashboardSummary = {
+  totalAttempts: number;
+  activeAttempts: number;
+  completedAttempts: number;
+  evaluatedAttempts: number;
+  avgSuccessScore: number;
+  passRate: number;
+  repsCount: number;
+  repsEvaluated: number;
+  needsEvaluation: number;
+};
+
+export type DashboardScenario = {
+  scenarioId: string;
+  title: string;
+  attempts: number;
+  avgScore: number;
+  passRate: number;
+};
+
+export type DashboardRep = {
+  userId: string;
+  name: string;
+  email: string;
+  attempts: number;
+  latestScore: number | null;
+  averageScore: number;
+  bestScore: number | null;
+  passRate: number;
+  completionRate: number;
+  evaluatedAttempts: number;
+  needsEvaluation: number;
+  lastAttemptDate: string;
+  coachingFocus: string;
+};
+
+export type DashboardScoreBand = {
+  label: string;
+  min: number | null;
+  max: number | null;
+  count: number;
+  percent: number;
+  color: string;
+};
+
+export type DashboardResponse = {
+  generatedAt: string;
+  selectedScenarioId: string;
+  passScore: number;
+  summary: DashboardSummary;
+  scenarios: DashboardScenario[];
+  reps: DashboardRep[];
+  scoreBands: DashboardScoreBand[];
+};
+
 export const apiBaseUrl = import.meta.env.VITE_API_BASE_URL ?? "";
 
 export const apiClient = axios.create({
@@ -268,6 +356,13 @@ export async function fetchUsers(): Promise<UserProfile[]> {
   return data.users;
 }
 
+export async function fetchDashboard(scenarioId = "ALL"): Promise<DashboardResponse> {
+  const { data } = await apiClient.get<DashboardResponse>("/dashboard", {
+    params: { scenarioId }
+  });
+  return data;
+}
+
 export async function fetchPersonas(): Promise<Persona[]> {
   const { data } = await apiClient.get<PersonasResponse>("/personas");
   return data.personas;
@@ -320,6 +415,20 @@ export async function markExamIssueDone(sessionId: string, issueId: string): Pro
     `/exam/sessions/${sessionId}/issues/${issueId}/done`
   );
   return data.issue;
+}
+
+export async function createExamEvaluation(sessionId: string): Promise<ExamEvaluation> {
+  const { data } = await apiClient.post<ExamEvaluationResponse>(
+    `/exam/sessions/${sessionId}/evaluation`,
+    undefined,
+    { timeout: 35000 }
+  );
+  return data.evaluation;
+}
+
+export async function fetchExamEvaluation(sessionId: string): Promise<ExamEvaluation> {
+  const { data } = await apiClient.get<ExamEvaluationResponse>(`/exam/sessions/${sessionId}/evaluation`);
+  return data.evaluation;
 }
 
 export async function createScenario(payload: ScenarioFormPayload): Promise<Scenario> {

@@ -35,8 +35,11 @@ Public endpoints:
 ```text
 POST /auth/signup
 POST /auth/confirm
+POST /auth/resend-confirmation
 POST /auth/signin
 POST /auth/refresh
+POST /auth/forgot-password
+POST /auth/forgot-password/confirm
 ```
 
 Protected endpoint:
@@ -85,9 +88,27 @@ After deploy, update local frontend API config if the API base URL changed:
 VITE_API_BASE_URL=https://your-api-id.execute-api.us-east-1.amazonaws.com/dev
 ```
 
-## Promote Manager
+## Manage User Access
 
-Manager access is profile-based. Promote a confirmed user by updating the DynamoDB `role` field:
+Manager access is profile-based. Managers can edit confirmed users from `/users`, which calls:
+
+```text
+PUT /users/{userId}
+Authorization: Bearer <manager-id-token>
+```
+
+Payload:
+
+```json
+{
+  "role": "manager",
+  "status": "ACTIVE"
+}
+```
+
+Allowed roles are `rep` and `manager`. Editable statuses are `ACTIVE` and `SUSPENDED`. Pending users must confirm email first. A manager cannot demote or suspend their own account.
+
+For the first manager only, promote a confirmed user directly in DynamoDB:
 
 ```bash
 aws dynamodb update-item \
@@ -116,4 +137,5 @@ aws dynamodb query \
 - `/exam/start`, `/exam/:sessionId`, `/personas`, `/scenarios`, and `/dashboard` require an active session.
 - Reps can access `/exam/start` and their own `/exam/:sessionId` session inbox.
 - Managers can access `/personas`, `/scenarios`, `/users`, and `/dashboard`.
+- Suspended users cannot sign in or use protected app routes.
 - Sign out clears local session storage.

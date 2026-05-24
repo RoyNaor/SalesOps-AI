@@ -14,7 +14,7 @@ Parameters:
     Description: Secrets Manager secret containing LLM provider keys.
   OpenAiModel:
     Type: String
-    Default: gpt-5.4-mini
+    Default: gpt-5-mini
     Description: OpenAI model used for scenario issue generation and exam evaluation.
 
 Globals:
@@ -221,6 +221,63 @@ Resources:
             Path: /auth/confirm
             Method: POST
 
+  ResendConfirmationFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.resendConfirmation
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Resends a Cognito signup confirmation code.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        ResendConfirmationRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/resend-confirmation
+            Method: POST
+
+  ForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.forgotPassword
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Starts a Cognito forgot-password reset.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        ForgotPasswordRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/forgot-password
+            Method: POST
+
+  ConfirmForgotPasswordFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/auth.confirmForgotPassword
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Confirms a Cognito password reset code.
+      Environment:
+        Variables:
+          USER_POOL_CLIENT_ID: !Ref UsersUserPoolClient
+          USERS_TABLE_NAME: !Ref UsersTable
+      Events:
+        ConfirmForgotPasswordRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /auth/forgot-password/confirm
+            Method: POST
+
   SignInFunction:
     Type: AWS::Serverless::Function
     Properties:
@@ -299,6 +356,28 @@ Resources:
             RestApiId: !Ref SalesOpsApi
             Path: /users
             Method: GET
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  UpdateUserFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.updateUser
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Updates user role and active/suspended status for managers.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        UpdateUserRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /users/{userId}
+            Method: PUT
             Auth:
               Authorizer: CognitoAuthorizer
 
@@ -477,6 +556,50 @@ Resources:
           Properties:
             RestApiId: !Ref SalesOpsApi
             Path: /scenarios/{scenarioId}/publish
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  CloneScenarioFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.cloneScenario
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Clones a scenario into a new draft.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        CloneScenarioRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios/{scenarioId}/clone
+            Method: POST
+            Auth:
+              Authorizer: CognitoAuthorizer
+
+  ArchiveScenarioFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      CodeUri: .
+      Handler: src/handlers/content.archiveScenario
+      Role: !Sub "arn:aws:iam::${AWS::AccountId}:role/LabRole"
+      Description: Archives a scenario so reps no longer see it.
+      Environment:
+        Variables:
+          USERS_TABLE_NAME: !Ref UsersTable
+          PERSONAS_TABLE_NAME: !Ref PersonasTable
+          SCENARIOS_TABLE_NAME: !Ref ScenariosTable
+      Events:
+        ArchiveScenarioRoute:
+          Type: Api
+          Properties:
+            RestApiId: !Ref SalesOpsApi
+            Path: /scenarios/{scenarioId}/archive
             Method: POST
             Auth:
               Authorizer: CognitoAuthorizer

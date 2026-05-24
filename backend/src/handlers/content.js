@@ -18,7 +18,7 @@ const scenariosTableName = process.env.SCENARIOS_TABLE_NAME;
 const examSessionsTableName = process.env.EXAM_SESSIONS_TABLE_NAME;
 const examIssueReleaseQueueUrl = process.env.EXAM_ISSUE_RELEASE_QUEUE_URL;
 const llmSecretName = process.env.LLM_SECRET_NAME || "salesops/dev/llm-api-keys";
-const openAiModel = process.env.OPENAI_MODEL || "gpt-5.4-mini";
+const openAiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
 const defaultIssueCount = 5;
 const minIssueCount = 1;
 const maxIssueCount = 20;
@@ -29,6 +29,9 @@ const examEvaluationRecordId = "EVALUATION";
 const examIssueRecordPrefix = "ISSUE#";
 const dashboardPassScore = 80;
 const issueDifficulties = new Set(["EASY", "MEDIUM", "HARD"]);
+const userRoles = new Set(["rep", "manager"]);
+const editableUserStatuses = new Set(["ACTIVE", "SUSPENDED"]);
+const scenarioStatuses = new Set(["DRAFT", "PUBLISHED", "ARCHIVED"]);
 const evaluationRubricWeights = {
   kindness: 0.25,
   professionalism: 0.25,
@@ -129,6 +132,19 @@ function toProfile(item) {
     userId: item.userId?.S || "",
     role: item.role?.S || "rep",
     status: item.status?.S || "ACTIVE"
+  };
+}
+
+function userToItem(user) {
+  return {
+    userId: { S: user.userId },
+    email: { S: user.email },
+    emailLower: { S: user.emailLower },
+    fullName: { S: user.fullName },
+    role: { S: user.role },
+    status: { S: user.status },
+    createdAt: { S: user.createdAt },
+    updatedAt: { S: user.updatedAt }
   };
 }
 
@@ -284,6 +300,14 @@ function scenarioToItem(scenario) {
     item.issuesGeneratedAt = { S: scenario.issuesGeneratedAt };
   }
 
+  if (scenario.generationSource) {
+    item.generationSource = { S: scenario.generationSource };
+  }
+
+  if (scenario.generationWarning) {
+    item.generationWarning = { S: scenario.generationWarning };
+  }
+
   return item;
 }
 
@@ -296,6 +320,8 @@ function itemToScenario(item) {
     issueCount: storedIssueCount(item.issueCount?.N),
     issues: (item.issues?.L || []).map(attributeToIssue).filter((issue) => issue.issueId),
     issuesGeneratedAt: item.issuesGeneratedAt?.S || "",
+    generationSource: item.generationSource?.S || "",
+    generationWarning: item.generationWarning?.S || "",
     status: item.status?.S || "DRAFT",
     createdAt: item.createdAt?.S || "",
     updatedAt: item.updatedAt?.S || ""
@@ -1360,7 +1386,7 @@ function normalizeGeneratedIssues(rawIssues, scenario) {
     const customerName = requiredString(issue.customerName);
     const subject = requiredString(issue.subject);
     const message = requiredString(issue.message);
-    const difficulty = validateDifficulty(issue.difficulty);
+    const difficulty = requiredString(issue.difficulty).toUpperCase();
 
     if (!personaIds.has(personaId)) {
       throw publicError(502, "OpenAI issue generation returned an unknown persona.");
@@ -1368,6 +1394,10 @@ function normalizeGeneratedIssues(rawIssues, scenario) {
 
     if (!customerName || !subject || !message) {
       throw publicError(502, "OpenAI issue generation returned incomplete issues.");
+    }
+
+    if (!issueDifficulties.has(difficulty)) {
+      throw publicError(502, "OpenAI issue generation returned an invalid difficulty.");
     }
 
     return {
@@ -1382,6 +1412,72 @@ function normalizeGeneratedIssues(rawIssues, scenario) {
       updatedAt: now
     };
   });
+}
+
+function buildDemoIssueSeed(scenario, persona, index) {
+  const topic = scenario.title || "SalesOps training";
+  const personaName = persona?.name || "customer";
+  const patterns = [
+    {
+      subject: `${topic}: renewal concern`,
+      message: `${personaName} needs a clear renewal path, pricing explanation, and one practical next step before approving the deal.`
+    },
+    {
+      subject: `${topic}: billing follow-up`,
+      message: `${personaName} sees a billing mismatch and wants ownership, a concise explanation, and timing for resolution.`
+    },
+    {
+      subject: `${topic}: expansion question`,
+      message: `${personaName} is considering more seats but needs value framing, risk handling, and a low-friction follow-up plan.`
+    }
+  ];
+  const pattern = patterns[index % patterns.length];
+
+  return {
+    personaId: persona?.personaId || scenario.personaIds[0],
+    customerName: `Demo Customer ${index + 1}`,
+    subject: pattern.subject,
+    message: pattern.message,
+    difficulty: ["EASY", "MEDIUM", "HARD"][index % 3]
+  };
+}
+
+function buildDemoIssues(scenario, personas) {
+  return Array.from({ length: scenario.issueCount }, (_item, index) => {
+    const persona = personas[index % personas.length];
+    return buildDemoIssueSeed(scenario, persona, index);
+  });
+}
+
+async function generateIssuesWithFallback(scenario, personas) {
+  try {
+    const rawIssues = await requestGeneratedIssues(scenario, personas);
+    return {
+      issues: normalizeGeneratedIssues(rawIssues, scenario),
+      generationSource: "OPENAI",
+      generationWarning: ""
+    };
+  } catch (error) {
+    if ((error.statusCode || 500) < 500) {
+      throw error;
+    }
+
+    console.error(error);
+    return {
+      issues: normalizeGeneratedIssues(buildDemoIssues(scenario, personas), scenario),
+      generationSource: "DEMO",
+      generationWarning: `OpenAI issue generation failed: ${error.message}. Demo issues were generated instead.`
+    };
+  }
+}
+
+function validateScenarioStatus(value, fallback) {
+  const status = requiredString(value) || fallback;
+  if (!scenarioStatuses.has(status)) {
+    throw publicError(400, "Scenario status must be DRAFT, PUBLISHED, or ARCHIVED.");
+  }
+
+  return status;
 }
 
 function mapError(error) {
@@ -1414,6 +1510,68 @@ exports.listUsers = async (event) => {
     await requireManager(event);
     const users = sortNewestFirst((await scanTable(usersTableName)).map(itemToUser));
     return json(200, { users });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.updateUser = async (event) => {
+  try {
+    const manager = await requireManager(event);
+    const userId = requiredString(event.pathParameters?.userId);
+    const body = parseBody(event);
+    const role = requiredString(body.role);
+    const status = requiredString(body.status);
+
+    if (!userId) {
+      return json(400, { message: "User id is required." });
+    }
+
+    if (!userRoles.has(role)) {
+      return json(400, { message: "Role must be rep or manager." });
+    }
+
+    if (!editableUserStatuses.has(status)) {
+      return json(400, { message: "Status must be ACTIVE or SUSPENDED." });
+    }
+
+    const current = await dynamodb.send(
+      new GetItemCommand({
+        TableName: usersTableName,
+        Key: {
+          userId: { S: userId }
+        }
+      })
+    );
+
+    if (!current.Item) {
+      return json(404, { message: "User not found." });
+    }
+
+    const previous = itemToUser(current.Item);
+    if (previous.status === "PENDING_CONFIRMATION") {
+      return json(400, { message: "Pending users must confirm email before role or status can change." });
+    }
+
+    if (manager.userId === userId && (role !== "manager" || status !== "ACTIVE")) {
+      return json(400, { message: "You cannot demote or suspend your own manager account." });
+    }
+
+    const user = {
+      ...previous,
+      role,
+      status,
+      updatedAt: new Date().toISOString()
+    };
+
+    await dynamodb.send(
+      new PutItemCommand({
+        TableName: usersTableName,
+        Item: userToItem(user)
+      })
+    );
+
+    return json(200, { user });
   } catch (error) {
     return mapError(error);
   }
@@ -1950,7 +2108,7 @@ exports.updateScenario = async (event) => {
       description: optionalString(body.description),
       personaIds: stringArray(body.personaIds),
       issueCount: body.issueCount === undefined ? previous.issueCount : parseIssueCount(body.issueCount),
-      status: optionalString(body.status) || previous.status,
+      status: validateScenarioStatus(body.status, previous.status),
       updatedAt: new Date().toISOString()
     };
 
@@ -2013,6 +2171,82 @@ exports.publishScenario = async (event) => {
   }
 };
 
+exports.cloneScenario = async (event) => {
+  try {
+    await requireManager(event);
+    const scenarioId = requiredString(event.pathParameters?.scenarioId);
+
+    if (!scenarioId) {
+      return json(400, { message: "Scenario id is required." });
+    }
+
+    const previous = await getScenarioById(scenarioId);
+    if (!previous) {
+      return json(404, { message: "Scenario not found." });
+    }
+
+    const now = new Date().toISOString();
+    const scenario = {
+      ...previous,
+      scenarioId: newId("scenario"),
+      title: `${previous.title} copy`,
+      issues: previous.issues.map((issue) => ({
+        ...issue,
+        issueId: newId("issue"),
+        createdAt: now,
+        updatedAt: now
+      })),
+      status: "DRAFT",
+      createdAt: now,
+      updatedAt: now
+    };
+
+    await dynamodb.send(
+      new PutItemCommand({
+        TableName: scenariosTableName,
+        Item: scenarioToItem(scenario)
+      })
+    );
+
+    return json(201, { scenario });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.archiveScenario = async (event) => {
+  try {
+    await requireManager(event);
+    const scenarioId = requiredString(event.pathParameters?.scenarioId);
+
+    if (!scenarioId) {
+      return json(400, { message: "Scenario id is required." });
+    }
+
+    const previous = await getScenarioById(scenarioId);
+    if (!previous) {
+      return json(404, { message: "Scenario not found." });
+    }
+
+    const scenario = {
+      ...previous,
+      status: "ARCHIVED",
+      updatedAt: new Date().toISOString()
+    };
+
+    await dynamodb.send(
+      new PutItemCommand({
+        TableName: scenariosTableName,
+        Item: scenarioToItem(scenario)
+      })
+    );
+
+    return json(200, { scenario });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
 exports.generateScenarioIssues = async (event) => {
   try {
     await requireManager(event);
@@ -2040,12 +2274,14 @@ exports.generateScenarioIssues = async (event) => {
       return json(400, { message: "Selected personas were not found." });
     }
 
-    const rawIssues = await requestGeneratedIssues(scenario, personas);
+    const generated = await generateIssuesWithFallback(scenario, personas);
     const now = new Date().toISOString();
     const nextScenario = {
       ...scenario,
-      issues: normalizeGeneratedIssues(rawIssues, scenario),
+      issues: generated.issues,
       issuesGeneratedAt: now,
+      generationSource: generated.generationSource,
+      generationWarning: generated.generationWarning,
       updatedAt: now
     };
 
@@ -2056,7 +2292,11 @@ exports.generateScenarioIssues = async (event) => {
       })
     );
 
-    return json(200, { scenario: nextScenario });
+    return json(200, {
+      scenario: nextScenario,
+      generationSource: generated.generationSource,
+      warning: generated.generationWarning
+    });
   } catch (error) {
     return mapError(error);
   }

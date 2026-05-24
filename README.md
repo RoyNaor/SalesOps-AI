@@ -35,6 +35,7 @@ Project status and next steps live in [docs/milestones.md](docs/milestones.md).
 ```bash
 npm run typecheck
 npm run build
+npm run smoke
 npm run aws:whoami
 npm run sam:build
 npm run sam:deploy:guided
@@ -44,6 +45,7 @@ npm run sam:deploy:guided
 
 - Managers create reusable personas in `/personas`.
 - Managers create scenarios in `/scenarios`, set issue count, publish, and generate editable issues.
-- Sessions, scoring, and dashboard data come later.
+- Reps start timed scenario exams, answer released inbox issues, and receive AI scoring.
+- Managers review users and performance dashboard data from completed exams.
 
 Do not commit real AWS credentials, LLM keys, `.env`, or `.env.local` files.

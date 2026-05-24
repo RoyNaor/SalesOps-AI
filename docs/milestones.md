@@ -16,11 +16,17 @@ This file is project source of truth for what is done, blocked, and next.
 - [x] Rep exam start page exists at `/exam/start`.
 - [x] Rep exam session API exists with SQS-scheduled issue release pulse.
 - [x] Rep inbox loads visible session issues and appends new issues with toast notification.
+- [x] Rep response submission and AI scoring/evaluation results exist.
+- [x] Manager dashboard aggregates real exam session data.
+- [x] Manager user role/status editing exists.
+- [x] Scenario clone/archive and readiness checklist exist.
+- [x] Auth resend confirmation and forgot-password recovery exist.
+- [x] Public cloud smoke script exists.
 - [x] Local `.env` placeholder exists for AWS lab credentials.
 - [x] Local checks pass: `typecheck`, `build`, `lint`, `diff --check`.
-- [x] Fresh AWS lab credentials added to `.env`.
+- [ ] Fresh AWS lab credentials added to `.env`.
 - [x] `sam build` completed with network access for backend dependencies.
-- [x] `sam deploy --guided` completed after latest backend changes.
+- [ ] `sam deploy --guided` completed after latest backend changes.
 - [x] Cloud `/health` smoke test passed.
 - [x] Cloud `/personas` rejects unauthenticated calls with `401`.
 - [ ] Cloud smoke test done for auth, personas, and scenarios.
@@ -49,37 +55,29 @@ aws sts get-caller-identity
 
 - [ ] Sign up user.
 - [ ] Confirm email.
-- [ ] Promote user to `manager`.
+- [ ] Promote user to `manager` from `/users` or DynamoDB if first manager is not created yet.
 - [ ] Sign in as manager.
+- [ ] Resend confirmation code and forgot-password flow tested.
 - [ ] Create persona.
 - [ ] Create scenario with issue count.
 - [ ] Publish scenario.
+- [ ] Confirm scenario readiness checklist.
 - [ ] Create or update `salesops/dev/llm-api-keys` with `OPENAI_API_KEY`.
 - [ ] Generate scenario issues.
+- [ ] Confirm demo issue fallback appears if OpenAI is unavailable.
 - [ ] Edit generated issue text.
+- [ ] Clone and archive scenario.
 - [ ] Sign in as rep.
 - [ ] Start exam from a published scenario.
 - [ ] Confirm SQS-delayed issues appear in the exam inbox over 3 minutes.
 
 4. When smoke works, commit or publish changes.
 
-## Next Product Milestone
-
-Build rep exam sessions from published scenarios and generated issues.
-
-- [x] Add exam session API for reps.
-- [x] Load generated issues into rep inbox.
-- [x] Release exam issues over time with SQS-backed pulse.
-- [x] Save rep responses.
-- [x] Add rep-facing AI scoring/evaluation results.
-
 ## Later Milestones
 
-- [ ] Add rep exam sessions.
-- [x] Add response submission.
-- [x] Add scoring/evaluation.
-- [ ] Add manager dashboard from real session data.
 - [ ] Add reports and coaching notes.
+- [ ] Add richer manager analytics and coaching notes.
+- [ ] Add automated end-to-end cloud smoke with disposable test users.
 
 ## Docs Rule
 

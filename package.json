@@ -15,6 +15,7 @@
     "build": "npm run build --workspaces --if-present",
     "typecheck": "npm run typecheck --workspaces --if-present",
     "lint": "npm run lint --workspaces --if-present",
+    "smoke": "node scripts/smoke.mjs",
     "aws:whoami": "aws sts get-caller-identity",
     "sam:build": "cd backend && sam build",
     "sam:deploy:guided": "cd backend && sam deploy --guided --region us-east-1"

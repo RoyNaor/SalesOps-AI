@@ -1,7 +1,7 @@
 import { FormEvent, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { ArrowRight, BadgeCheck, MailCheck, UserPlus } from "lucide-react";
-import { getApiErrorMessage } from "../api/client";
+import { getApiErrorMessage, resendConfirmationCode } from "../api/client";
 import { useAuth } from "../auth/AuthContext";
 
 export default function SignupPage() {
@@ -15,6 +15,8 @@ export default function SignupPage() {
   const [pendingEmail, setPendingEmail] = useState("");
   const [isConfirmed, setIsConfirmed] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isResending, setIsResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
   const [error, setError] = useState("");
 
   async function handleSignup(event: FormEvent<HTMLFormElement>) {
@@ -30,6 +32,7 @@ export default function SignupPage() {
     try {
       const response = await signUp({ email, password, fullName });
       setPendingEmail(response.email);
+      setResendMessage("");
     } catch (err) {
       setError(getApiErrorMessage(err, "Signup failed."));
     } finally {
@@ -45,10 +48,26 @@ export default function SignupPage() {
     try {
       await confirmSignUp({ email: pendingEmail, code });
       setIsConfirmed(true);
+      setResendMessage("");
     } catch (err) {
       setError(getApiErrorMessage(err, "Confirmation failed."));
     } finally {
       setIsSubmitting(false);
+    }
+  }
+
+  async function handleResendCode() {
+    setError("");
+    setResendMessage("");
+    setIsResending(true);
+
+    try {
+      await resendConfirmationCode(pendingEmail);
+      setResendMessage(`New code sent to ${pendingEmail}.`);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Confirmation code could not be resent."));
+    } finally {
+      setIsResending(false);
     }
   }
 
@@ -58,7 +77,7 @@ export default function SignupPage() {
         <span className="brand-mark">SA</span>
         <span className="eyebrow">New account</span>
         <h1>Create rep access for the SalesOps AI lab.</h1>
-        <p>New accounts start as reps. Manager access is granted later from the DynamoDB Users table.</p>
+        <p>New accounts start as reps. Managers can grant access from the Users page after confirmation.</p>
         <div className="auth-proof">
           <BadgeCheck aria-hidden="true" size={20} />
           <span>Default role: rep</span>
@@ -159,10 +178,14 @@ export default function SignupPage() {
               </label>
 
               {error ? <p className="form-error">{error}</p> : null}
+              {resendMessage ? <p className="form-success">{resendMessage}</p> : null}
 
               <button type="submit" className="primary-button" disabled={isSubmitting}>
                 {isSubmitting ? "Confirming..." : "Confirm email"}
                 <ArrowRight aria-hidden="true" size={18} />
+              </button>
+              <button type="button" className="secondary-button" disabled={isSubmitting || isResending} onClick={handleResendCode}>
+                {isResending ? "Sending..." : "Resend code"}
               </button>
             </>
           ) : (

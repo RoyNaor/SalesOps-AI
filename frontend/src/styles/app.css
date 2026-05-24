@@ -121,7 +121,8 @@ button:disabled {
 }
 
 .auth-switch,
-.form-error {
+.form-error,
+.form-success {
   margin: 0;
 }
 
@@ -143,6 +144,20 @@ button:disabled {
   padding: 12px 14px;
   font-weight: 800;
   line-height: 1.45;
+}
+
+.form-success {
+  border: 1px solid #b6d0a8;
+  border-radius: 8px;
+  background: #edf5e8;
+  color: #285b31;
+  padding: 12px 14px;
+  font-weight: 800;
+  line-height: 1.45;
+}
+
+.auth-inline-action {
+  justify-self: center;
 }
 
 .route-loading {
@@ -526,6 +541,11 @@ textarea:focus {
   background: #eadfc7;
   color: #17342f;
   padding: 0 16px;
+}
+
+.danger-button {
+  background: #f5d8ce;
+  color: #8c2f20;
 }
 
 .text-button {
@@ -1942,6 +1962,11 @@ a.secondary-button {
   color: #6b5118;
 }
 
+.status-badge.status-archived {
+  background: #e7e0d3;
+  color: #665e52;
+}
+
 .icon-button {
   width: 34px;
   min-height: 34px;
@@ -2069,6 +2094,47 @@ a.secondary-button {
   background: #e9f0e4;
   color: #2b5630;
   padding: 5px 8px;
+}
+
+.generation-warning {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  border: 1px solid #e1c06a;
+  border-radius: 8px;
+  background: #fff5d8;
+  color: #6b5118;
+  padding: 10px 12px;
+  font-size: 0.84rem;
+  font-weight: 800;
+  line-height: 1.4;
+}
+
+.scenario-readiness {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid #e5dbc7;
+  border-radius: 8px;
+  background: #fffaf0;
+}
+
+.scenario-readiness span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  background: #eee5d5;
+  color: #766b5b;
+  padding: 6px 9px;
+  font-size: 0.76rem;
+  font-weight: 900;
+}
+
+.scenario-readiness span.ready {
+  background: #e4f0df;
+  color: #285b31;
 }
 
 .issue-modal-section {

@@ -2,8 +2,11 @@
 
 const {
   CognitoIdentityProviderClient,
+  ConfirmForgotPasswordCommand,
   ConfirmSignUpCommand,
+  ForgotPasswordCommand,
   InitiateAuthCommand,
+  ResendConfirmationCodeCommand,
   SignUpCommand
 } = require("@aws-sdk/client-cognito-identity-provider");
 const {
@@ -182,7 +185,7 @@ async function ensureProfileFromClaims(claims) {
 
   let profile = (await getProfileByUserId(userId)) || (await getProfileByEmail(email));
   if (profile) {
-    return profile.status === "ACTIVE" ? profile : markProfileActive(profile);
+    return profile.status === "PENDING_CONFIRMATION" ? markProfileActive(profile) : profile;
   }
 
   profile = {
@@ -217,6 +220,10 @@ function mapError(error) {
 
   if (error.name === "UserNotConfirmedException") {
     return json(403, { message: "Confirm your email before signing in." });
+  }
+
+  if (error.name === "LimitExceededException" || error.name === "TooManyRequestsException") {
+    return json(429, { message: "Too many attempts. Try again later." });
   }
 
   if (error.name === "NotAuthorizedException" || error.name === "UserNotFoundException") {
@@ -355,6 +362,10 @@ exports.signin = async (event) => {
       name: claims.name
     });
 
+    if (user.status !== "ACTIVE") {
+      return json(403, { message: "Account is not active." });
+    }
+
     return json(200, {
       idToken: auth.IdToken,
       accessToken: auth.AccessToken,
@@ -412,7 +423,84 @@ exports.me = async (event) => {
     }
 
     const user = await ensureProfileFromClaims(claims);
+    if (user.status !== "ACTIVE") {
+      return json(403, { message: "Account is not active." });
+    }
+
     return json(200, { user });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.resendConfirmation = async (event) => {
+  try {
+    requireConfig();
+    const body = parseBody(event);
+    const email = normalizeEmail(body.email);
+
+    if (!email) {
+      return json(400, { message: "Email is required." });
+    }
+
+    await cognito.send(
+      new ResendConfirmationCodeCommand({
+        ClientId: userPoolClientId,
+        Username: email
+      })
+    );
+
+    return json(200, { status: "sent" });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.forgotPassword = async (event) => {
+  try {
+    requireConfig();
+    const body = parseBody(event);
+    const email = normalizeEmail(body.email);
+
+    if (!email) {
+      return json(400, { message: "Email is required." });
+    }
+
+    await cognito.send(
+      new ForgotPasswordCommand({
+        ClientId: userPoolClientId,
+        Username: email
+      })
+    );
+
+    return json(200, { status: "sent" });
+  } catch (error) {
+    return mapError(error);
+  }
+};
+
+exports.confirmForgotPassword = async (event) => {
+  try {
+    requireConfig();
+    const body = parseBody(event);
+    const email = normalizeEmail(body.email);
+    const code = asRequiredString(body.code);
+    const password = asRequiredString(body.password);
+
+    if (!email || !code || !password) {
+      return json(400, { message: "Email, confirmation code, and new password are required." });
+    }
+
+    await cognito.send(
+      new ConfirmForgotPasswordCommand({
+        ClientId: userPoolClientId,
+        Username: email,
+        ConfirmationCode: code,
+        Password: password
+      })
+    );
+
+    return json(200, { status: "confirmed" });
   } catch (error) {
     return mapError(error);
   }

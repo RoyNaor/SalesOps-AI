@@ -1,7 +1,9 @@
 import { useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { Search, SlidersHorizontal } from "lucide-react";
-import { fetchUsers } from "../api/client";
+import { createPortal } from "react-dom";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { Edit3, Save, Search, SlidersHorizontal, X } from "lucide-react";
+import { fetchUsers, getApiErrorMessage, updateUserProfile } from "../api/client";
+import type { EditableUserStatus, UserProfile, UserRole, UserUpdatePayload } from "../api/client";
 import { DataTable } from "../components/ui/basic-data-table";
 import type { DataTableColumn } from "../components/ui/basic-data-table";
 
@@ -15,9 +17,12 @@ type UserTableRow = {
   createdLabel: string;
   updatedAt: number;
   updatedLabel: string;
+  actions: string;
+  user: UserProfile;
 };
 
 export default function UsersPage() {
+  const queryClient = useQueryClient();
   const { data: users = [], isLoading } = useQuery({
     queryKey: ["users"],
     queryFn: fetchUsers
@@ -25,6 +30,9 @@ export default function UsersPage() {
   const [searchTerm, setSearchTerm] = useState("");
   const [roleFilter, setRoleFilter] = useState("ALL");
   const [statusFilter, setStatusFilter] = useState("ALL");
+  const [editingUser, setEditingUser] = useState<UserProfile | null>(null);
+  const [userForm, setUserForm] = useState<UserUpdatePayload>({ role: "rep", status: "ACTIVE" });
+  const [error, setError] = useState("");
 
   const managerCount = useMemo(
     () => users.filter((user) => user.role === "manager").length,
@@ -64,10 +72,21 @@ export default function UsersPage() {
         createdAt: timestampForSort(user.createdAt),
         createdLabel: formatShortDate(user.createdAt),
         updatedAt: timestampForSort(user.updatedAt),
-        updatedLabel: formatShortDate(user.updatedAt)
+        updatedLabel: formatShortDate(user.updatedAt),
+        actions: "",
+        user
       })),
     [filteredUsers]
   );
+  const updateMutation = useMutation({
+    mutationFn: ({ userId, payload }: { userId: string; payload: UserUpdatePayload }) =>
+      updateUserProfile(userId, payload),
+    onSuccess: async () => {
+      setEditingUser(null);
+      setError("");
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+    }
+  });
   const userColumns = useMemo<DataTableColumn<UserTableRow>[]>(
     () => [
       {
@@ -120,10 +139,59 @@ export default function UsersPage() {
         sortable: true,
         width: "12%",
         render: (_value, row) => <span>{row.updatedLabel}</span>
+      },
+      {
+        key: "actions",
+        header: "Actions",
+        width: "72px",
+        render: (_value, row) => (
+          <button
+            className="icon-button"
+            type="button"
+            aria-label={`Edit ${row.fullName}`}
+            onClick={(event) => {
+              event.stopPropagation();
+              startEdit(row.user);
+            }}
+          >
+            <Edit3 aria-hidden="true" size={16} />
+          </button>
+        )
       }
     ],
     []
   );
+
+  function startEdit(user: UserProfile) {
+    setError("");
+    setEditingUser(user);
+    setUserForm({
+      role: user.role,
+      status: user.status === "SUSPENDED" ? "SUSPENDED" : "ACTIVE"
+    });
+  }
+
+  function closeUserModal() {
+    setEditingUser(null);
+    setError("");
+  }
+
+  async function handleSaveUser() {
+    if (!editingUser) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      await updateMutation.mutateAsync({
+        userId: editingUser.userId,
+        payload: userForm
+      });
+    } catch (err) {
+      setError(getApiErrorMessage(err, "User update failed."));
+    }
+  }
 
   return (
     <section className="builder-layout scenario-workbench">
@@ -186,6 +254,8 @@ export default function UsersPage() {
         </div>
       </div>
 
+      {error && !editingUser ? <p className="form-error">{error}</p> : null}
+
       <DataTable
         className="scenario-data-table"
         compact
@@ -197,6 +267,99 @@ export default function UsersPage() {
         searchable={false}
         striped
       />
+
+      {editingUser ? createPortal(
+        <div className="modal-backdrop" onMouseDown={closeUserModal}>
+          <section
+            aria-labelledby="user-modal-title"
+            aria-modal="true"
+            className="scenario-form scenario-modal"
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <div className="modal-title-row">
+              <div className="panel-heading">
+                <Save aria-hidden="true" size={20} />
+                <div>
+                  <h3 id="user-modal-title">Edit user access</h3>
+                  <p>{editingUser.email}</p>
+                </div>
+              </div>
+              <button
+                aria-label="Close user form"
+                className="icon-button"
+                disabled={updateMutation.isPending}
+                type="button"
+                onClick={closeUserModal}
+              >
+                <X aria-hidden="true" size={18} />
+              </button>
+            </div>
+
+            <div className="form-row">
+              <label>
+                Role
+                <select
+                  value={userForm.role}
+                  onChange={(event) =>
+                    setUserForm((current) => ({
+                      ...current,
+                      role: event.target.value as UserRole
+                    }))
+                  }
+                  disabled={editingUser.status === "PENDING_CONFIRMATION" || updateMutation.isPending}
+                >
+                  <option value="rep">Rep</option>
+                  <option value="manager">Manager</option>
+                </select>
+              </label>
+
+              <label>
+                Status
+                <select
+                  value={userForm.status}
+                  onChange={(event) =>
+                    setUserForm((current) => ({
+                      ...current,
+                      status: event.target.value as EditableUserStatus
+                    }))
+                  }
+                  disabled={editingUser.status === "PENDING_CONFIRMATION" || updateMutation.isPending}
+                >
+                  <option value="ACTIVE">Active</option>
+                  <option value="SUSPENDED">Suspended</option>
+                </select>
+                {editingUser.status === "PENDING_CONFIRMATION" ? (
+                  <span className="field-help">Pending users must confirm email before access can change.</span>
+                ) : null}
+              </label>
+            </div>
+
+            {error ? <p className="form-error">{error}</p> : null}
+
+            <div className="button-row">
+              <button
+                type="button"
+                className="secondary-button"
+                disabled={updateMutation.isPending}
+                onClick={closeUserModal}
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                className="primary-button"
+                disabled={editingUser.status === "PENDING_CONFIRMATION" || updateMutation.isPending}
+                onClick={handleSaveUser}
+              >
+                <Save aria-hidden="true" size={18} />
+                {updateMutation.isPending ? "Saving..." : "Save access"}
+              </button>
+            </div>
+          </section>
+        </div>,
+        document.body
+      ) : null}
     </section>
   );
 }

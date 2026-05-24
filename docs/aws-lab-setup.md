@@ -85,6 +85,12 @@ Open the app and check the login screen. Sign up, confirm the email code, then s
 
 Managers can create reusable personas at `/personas`, then create scenarios at `/scenarios` by selecting a persona, setting issue count, publishing, and generating editable issues.
 
+Run public API smoke checks after deploy:
+
+```bash
+npm run smoke
+```
+
 After deploy, continue from [milestones.md](milestones.md).
 
 ## 5. LLM secret
@@ -98,6 +104,8 @@ aws secretsmanager create-secret \
   --name salesops/dev/llm-api-keys \
   --secret-string '{"OPENAI_API_KEY":"PASTE_OPENAI_API_KEY"}'
 ```
+
+The default model is `gpt-5-mini`. If OpenAI is unavailable or misconfigured during issue generation, the backend creates clearly marked demo issues so the lab flow can continue.
 
 If the secret already exists, update it:
 

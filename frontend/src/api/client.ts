@@ -8,6 +8,7 @@ export type HealthResponse = {
 };
 
 export type UserRole = "rep" | "manager";
+export type EditableUserStatus = "ACTIVE" | "SUSPENDED";
 
 export type UserProfile = {
   userId: string;
@@ -37,6 +38,16 @@ export type ConfirmSignUpRequest = {
   code: string;
 };
 
+export type ForgotPasswordRequest = {
+  email: string;
+};
+
+export type ConfirmForgotPasswordRequest = {
+  email: string;
+  code: string;
+  password: string;
+};
+
 export type SignInRequest = {
   email: string;
   password: string;
@@ -64,6 +75,15 @@ export type UsersResponse = {
   users: UserProfile[];
 };
 
+export type UserResponse = {
+  user: UserProfile;
+};
+
+export type UserUpdatePayload = {
+  role: UserRole;
+  status: EditableUserStatus;
+};
+
 export type PersonaStatus = "ACTIVE" | "ARCHIVED" | string;
 
 export type Persona = {
@@ -82,7 +102,7 @@ export type PersonaFormPayload = {
   behaviorNotes: string;
 };
 
-export type ScenarioStatus = "DRAFT" | "PUBLISHED" | string;
+export type ScenarioStatus = "DRAFT" | "PUBLISHED" | "ARCHIVED" | string;
 export type ScenarioIssueDifficulty = "EASY" | "MEDIUM" | "HARD";
 
 export type ScenarioIssue = {
@@ -105,6 +125,8 @@ export type Scenario = {
   issueCount: number;
   issues: ScenarioIssue[];
   issuesGeneratedAt?: string;
+  generationSource?: "OPENAI" | "DEMO" | string;
+  generationWarning?: string;
   status: ScenarioStatus;
   createdAt: string;
   updatedAt: string;
@@ -179,6 +201,11 @@ export type ScenariosResponse = {
 
 export type ScenarioResponse = {
   scenario: Scenario;
+};
+
+export type ScenarioGenerationResponse = ScenarioResponse & {
+  generationSource?: "OPENAI" | "DEMO" | string;
+  warning?: string;
 };
 
 export type ExamScenariosResponse = {
@@ -336,6 +363,18 @@ export async function confirmUserSignUp(payload: ConfirmSignUpRequest): Promise<
   await apiClient.post("/auth/confirm", payload);
 }
 
+export async function resendConfirmationCode(email: string): Promise<void> {
+  await apiClient.post("/auth/resend-confirmation", { email });
+}
+
+export async function startForgotPassword(payload: ForgotPasswordRequest): Promise<void> {
+  await apiClient.post("/auth/forgot-password", payload);
+}
+
+export async function confirmForgotPassword(payload: ConfirmForgotPasswordRequest): Promise<void> {
+  await apiClient.post("/auth/forgot-password/confirm", payload);
+}
+
 export async function signInUser(payload: SignInRequest): Promise<SignInResponse> {
   const { data } = await apiClient.post<SignInResponse>("/auth/signin", payload);
   return data;
@@ -354,6 +393,11 @@ export async function fetchCurrentUser(): Promise<UserProfile> {
 export async function fetchUsers(): Promise<UserProfile[]> {
   const { data } = await apiClient.get<UsersResponse>("/users");
   return data.users;
+}
+
+export async function updateUserProfile(userId: string, payload: UserUpdatePayload): Promise<UserProfile> {
+  const { data } = await apiClient.put<UserResponse>(`/users/${userId}`, payload);
+  return data.user;
 }
 
 export async function fetchDashboard(scenarioId = "ALL"): Promise<DashboardResponse> {
@@ -446,13 +490,23 @@ export async function publishScenario(scenarioId: string): Promise<Scenario> {
   return data.scenario;
 }
 
-export async function generateScenarioIssues(scenarioId: string): Promise<Scenario> {
-  const { data } = await apiClient.post<ScenarioResponse>(
+export async function cloneScenario(scenarioId: string): Promise<Scenario> {
+  const { data } = await apiClient.post<ScenarioResponse>(`/scenarios/${scenarioId}/clone`);
+  return data.scenario;
+}
+
+export async function archiveScenario(scenarioId: string): Promise<Scenario> {
+  const { data } = await apiClient.post<ScenarioResponse>(`/scenarios/${scenarioId}/archive`);
+  return data.scenario;
+}
+
+export async function generateScenarioIssues(scenarioId: string): Promise<ScenarioGenerationResponse> {
+  const { data } = await apiClient.post<ScenarioGenerationResponse>(
     `/scenarios/${scenarioId}/issues/generate`,
     undefined,
     { timeout: 30000 }
   );
-  return data.scenario;
+  return data;
 }
 
 export async function updateScenarioIssue(

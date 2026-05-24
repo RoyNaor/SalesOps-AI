@@ -1,10 +1,12 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { createPortal } from "react-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Edit3, Plus, Rocket, Save, Search, SlidersHorizontal, X } from "lucide-react";
+import { Archive, AlertTriangle, Check, Copy, Edit3, Plus, Rocket, Save, Search, SlidersHorizontal, X } from "lucide-react";
 import { DataTable } from "../components/ui/basic-data-table";
 import type { DataTableColumn } from "../components/ui/basic-data-table";
 import {
+  archiveScenario,
+  cloneScenario,
   createScenario,
   fetchPersonas,
   fetchScenarios,
@@ -14,7 +16,7 @@ import {
   updateScenario,
   updateScenarioIssue
 } from "../api/client";
-import type { Scenario, ScenarioFormPayload, ScenarioIssueUpdatePayload } from "../api/client";
+import type { Scenario, ScenarioFormPayload, ScenarioGenerationResponse, ScenarioIssueUpdatePayload } from "../api/client";
 
 const emptyForm: ScenarioFormPayload = {
   title: "",
@@ -55,8 +57,9 @@ export default function ScenarioBuilderPage() {
   const [form, setForm] = useState<ScenarioFormPayload>(emptyForm);
   const [error, setError] = useState("");
   const [searchTerm, setSearchTerm] = useState("");
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [statusFilter, setStatusFilter] = useState("OPEN");
   const [personaFilter, setPersonaFilter] = useState("ALL");
+  const [generationNotice, setGenerationNotice] = useState("");
 
   const personasById = useMemo(
     () => new Map(personas.map((persona) => [persona.personaId, persona.name])),
@@ -74,11 +77,16 @@ export default function ScenarioBuilderPage() {
     () => scenarios.filter((scenario) => scenario.status === "PUBLISHED").length,
     [scenarios]
   );
+  const archivedCount = useMemo(
+    () => scenarios.filter((scenario) => scenario.status === "ARCHIVED").length,
+    [scenarios]
+  );
   const filteredScenarios = useMemo(() => {
     const normalizedSearch = searchTerm.trim().toLowerCase();
 
     return scenarios.filter((scenario) => {
-      const matchesStatus = statusFilter === "ALL" || scenario.status === statusFilter;
+      const matchesStatus =
+        statusFilter === "OPEN" ? scenario.status !== "ARCHIVED" : statusFilter === "ALL" || scenario.status === statusFilter;
       const matchesPersona = personaFilter === "ALL" || scenario.personaIds.includes(personaFilter);
       const personaNames = scenario.personaIds
         .map((personaId) => personasById.get(personaId) || "")
@@ -132,7 +140,7 @@ export default function ScenarioBuilderPage() {
         sortable: true,
         width: "12%",
         render: (value) => (
-          <span className={`status-badge ${value === "PUBLISHED" ? "status-published" : "status-draft"}`}>
+          <span className={statusBadgeClass(String(value))}>
             {String(value)}
           </span>
         )
@@ -264,8 +272,29 @@ export default function ScenarioBuilderPage() {
 
   const generateIssuesMutation = useMutation({
     mutationFn: generateScenarioIssues,
+    onSuccess: async (result: ScenarioGenerationResponse) => {
+      setSelectedScenarioId(result.scenario.scenarioId);
+      setGenerationNotice(result.warning || "");
+      await queryClient.invalidateQueries({ queryKey: ["scenarios"] });
+    }
+  });
+
+  const cloneMutation = useMutation({
+    mutationFn: cloneScenario,
     onSuccess: async (scenario) => {
+      setDetailModalOpen(false);
+      setGenerationNotice("");
+      await queryClient.invalidateQueries({ queryKey: ["scenarios"] });
       setSelectedScenarioId(scenario.scenarioId);
+    }
+  });
+
+  const archiveMutation = useMutation({
+    mutationFn: archiveScenario,
+    onSuccess: async () => {
+      setDetailModalOpen(false);
+      setSelectedScenarioId("");
+      setGenerationNotice("");
       await queryClient.invalidateQueries({ queryKey: ["scenarios"] });
     }
   });
@@ -341,6 +370,7 @@ export default function ScenarioBuilderPage() {
 
   function openScenarioDetail(scenario: Scenario) {
     setError("");
+    setGenerationNotice(scenario.generationWarning || "");
     setSelectedScenarioId(scenario.scenarioId);
     setDetailModalOpen(true);
   }
@@ -348,6 +378,7 @@ export default function ScenarioBuilderPage() {
   function closeDetailModal() {
     setDetailModalOpen(false);
     setError("");
+    setGenerationNotice("");
   }
 
   function updateIssueDraft(issueId: string, patch: Partial<ScenarioIssueUpdatePayload>) {
@@ -404,6 +435,34 @@ export default function ScenarioBuilderPage() {
     }
   }
 
+  async function handleCloneScenario() {
+    if (!selectedScenario) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      await cloneMutation.mutateAsync(selectedScenario.scenarioId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Scenario clone failed."));
+    }
+  }
+
+  async function handleArchiveScenario() {
+    if (!selectedScenario || !window.confirm(`Archive "${selectedScenario.title}"? Reps will no longer see it.`)) {
+      return;
+    }
+
+    setError("");
+
+    try {
+      await archiveMutation.mutateAsync(selectedScenario.scenarioId);
+    } catch (err) {
+      setError(getApiErrorMessage(err, "Scenario archive failed."));
+    }
+  }
+
   async function handleSaveIssue(issueId: string) {
     if (!selectedScenario || !issueDrafts[issueId]) {
       return;
@@ -435,8 +494,12 @@ export default function ScenarioBuilderPage() {
             Published
           </span>
           <span>
-            <strong>{scenarios.length - publishedCount}</strong>
+            <strong>{scenarios.length - publishedCount - archivedCount}</strong>
             Draft
+          </span>
+          <span>
+            <strong>{archivedCount}</strong>
+            Archived
           </span>
           <span>
             <strong>{scenarios.length}</strong>
@@ -461,6 +524,7 @@ export default function ScenarioBuilderPage() {
           <label>
             <span>Status</span>
             <select value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)}>
+              <option value="OPEN">Active scenarios</option>
               <option value="ALL">All status</option>
               {availableStatuses.map((status) => (
                 <option key={status} value={status}>
@@ -537,6 +601,12 @@ export default function ScenarioBuilderPage() {
                 <strong>{selectedScenario.status}</strong>
                 status
               </span>
+              {selectedScenario.generationSource ? (
+                <span>
+                  <strong>{selectedScenario.generationSource}</strong>
+                  issues
+                </span>
+              ) : null}
               <span>
                 <strong>{formatShortDate(selectedScenario.updatedAt)}</strong>
                 updated
@@ -557,11 +627,39 @@ export default function ScenarioBuilderPage() {
             </div>
 
             {error ? <p className="form-error">{error}</p> : null}
+            {generationNotice ? (
+              <div className="generation-warning" role="status">
+                <AlertTriangle aria-hidden="true" size={17} />
+                <span>{generationNotice}</span>
+              </div>
+            ) : null}
+
+            <div className="scenario-readiness" aria-label="Scenario readiness checklist">
+              {readinessItems(selectedScenario).map((item) => (
+                <span className={item.ready ? "ready" : ""} key={item.label}>
+                  <Check aria-hidden="true" size={14} />
+                  {item.label}
+                </span>
+              ))}
+            </div>
 
             <div className="detail-action-row">
               <button type="button" className="secondary-button" onClick={() => startEdit(selectedScenario)}>
                 <Edit3 aria-hidden="true" size={16} />
                 Edit scenario
+              </button>
+              <button type="button" className="secondary-button" disabled={cloneMutation.isPending} onClick={handleCloneScenario}>
+                <Copy aria-hidden="true" size={16} />
+                {cloneMutation.isPending ? "Cloning..." : "Clone"}
+              </button>
+              <button
+                type="button"
+                className="secondary-button danger-button"
+                disabled={selectedScenario.status === "ARCHIVED" || archiveMutation.isPending}
+                onClick={handleArchiveScenario}
+              >
+                <Archive aria-hidden="true" size={16} />
+                {archiveMutation.isPending ? "Archiving..." : "Archive"}
               </button>
               <button
                 type="button"
@@ -808,4 +906,33 @@ function formatShortDate(value: string) {
 function timestampForSort(value: string) {
   const time = new Date(value).getTime();
   return Number.isNaN(time) ? 0 : time;
+}
+
+function readinessItems(scenario: Scenario) {
+  return [
+    { label: "Persona selected", ready: scenario.personaIds.length > 0 },
+    { label: "Published", ready: scenario.status === "PUBLISHED" },
+    { label: "Issues generated", ready: scenario.issues.length > 0 },
+    { label: "Issue count matched", ready: scenario.issues.length === scenario.issueCount },
+    {
+      label: "Ready for reps",
+      ready:
+        scenario.status === "PUBLISHED" &&
+        scenario.personaIds.length > 0 &&
+        scenario.issues.length > 0 &&
+        scenario.issues.length === scenario.issueCount
+    }
+  ];
+}
+
+function statusBadgeClass(status: string) {
+  if (status === "PUBLISHED") {
+    return "status-badge status-published";
+  }
+
+  if (status === "ARCHIVED") {
+    return "status-badge status-archived";
+  }
+
+  return "status-badge status-draft";
 }

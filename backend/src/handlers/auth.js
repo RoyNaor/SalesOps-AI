@@ -1,3 +1,4 @@
+// Cognito + DynamoDB auth handler: signup, confirm, signin, refresh, and profile sync
 "use strict";
 
 const {
@@ -64,6 +65,7 @@ function requireConfig() {
   }
 }
 
+// Signature is intentionally not verified — Cognito's authorizer already validated it upstream
 function decodeJwtPayload(token) {
   const [, payload] = String(token || "").split(".");
   if (!payload) {
@@ -151,6 +153,7 @@ async function putProfile(profile) {
   );
 }
 
+// Called after email confirmation to transition PENDING_CONFIRMATION → ACTIVE
 async function markProfileActive(profile) {
   const updatedAt = new Date().toISOString();
 
@@ -178,6 +181,7 @@ async function markProfileActive(profile) {
   };
 }
 
+// Upsert pattern: checks both userId (primary) and email (GSI) to handle pre-existing records from signup
 async function ensureProfileFromClaims(claims) {
   const userId = claims.sub;
   const email = normalizeEmail(claims.email);

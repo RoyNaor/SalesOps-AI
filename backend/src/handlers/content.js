@@ -1,3 +1,4 @@
+// Scenario, persona, exam session, and manager dashboard handler for SalesOps AI
 "use strict";
 
 const {
@@ -18,20 +19,21 @@ const scenariosTableName = process.env.SCENARIOS_TABLE_NAME;
 const examSessionsTableName = process.env.EXAM_SESSIONS_TABLE_NAME;
 const examIssueReleaseQueueUrl = process.env.EXAM_ISSUE_RELEASE_QUEUE_URL;
 const llmSecretName = process.env.LLM_SECRET_NAME || "salesops/dev/llm-api-keys";
-const openAiModel = process.env.OPENAI_MODEL || "gpt-5-mini";
+const openAiModel = process.env.OPENAI_MODEL || "gpt-4o-mini";
 const defaultIssueCount = 5;
 const minIssueCount = 1;
 const maxIssueCount = 20;
-const examDurationSeconds = 180;
+const examDurationSeconds = 180; // 3 minutes per exam session
 const maxExamResponseLength = 4000;
 const examMetaRecordId = "META";
 const examEvaluationRecordId = "EVALUATION";
 const examIssueRecordPrefix = "ISSUE#";
-const dashboardPassScore = 80;
+const dashboardPassScore = 80; // minimum weighted score (0-100) considered a pass
 const issueDifficulties = new Set(["EASY", "MEDIUM", "HARD"]);
 const userRoles = new Set(["rep", "manager"]);
 const editableUserStatuses = new Set(["ACTIVE", "SUSPENDED"]);
 const scenarioStatuses = new Set(["DRAFT", "PUBLISHED", "ARCHIVED"]);
+// Weights must sum to 1.0; changing any value requires updating the others to compensate
 const evaluationRubricWeights = {
   kindness: 0.25,
   professionalism: 0.25,
@@ -161,6 +163,7 @@ function itemToUser(item) {
   };
 }
 
+// Authorization gatekeeper for all manager-only routes; throws 403 if role is not "manager"
 async function requireManager(event) {
   if (!usersTableName || !personasTableName || !scenariosTableName) {
     throw Object.assign(new Error("Content service is not configured."), { statusCode: 500 });
@@ -215,6 +218,7 @@ async function requireActiveUser(event) {
   return profile;
 }
 
+// Authorization gatekeeper for all rep-only routes; delegates active-user check then enforces "rep" role
 async function requireRep(event) {
   if (!scenariosTableName || !examSessionsTableName) {
     throw Object.assign(new Error("Exam service is not configured."), { statusCode: 500 });
@@ -730,6 +734,7 @@ function isExamEnded(meta) {
   return meta.status === "ENDED" || (Number.isFinite(endsAtMs) && endsAtMs <= Date.now());
 }
 
+// Proactively writes VISIBLE status to DynamoDB rather than filtering on read, so SQS retries stay idempotent
 async function revealDueExamIssues(items, now) {
   const dueItems = items.filter(
     (item) => isExamIssueItem(item) && !item.isVisible?.BOOL && String(item.releaseAt?.S || "") <= now
@@ -747,6 +752,7 @@ async function revealDueExamIssues(items, now) {
   return items.map((item) => updatedByRecordId.get(item.recordId?.S) || item);
 }
 
+// Spreads issues evenly across the exam window: delay = (duration * index) / totalIssues
 function releaseDelaySeconds(index, totalIssues) {
   if (index === 0 || totalIssues <= 1) {
     return 0;
@@ -788,6 +794,7 @@ function pulseResponse(meta, issueItems) {
   };
 }
 
+// SQS DelaySeconds hard cap is 900 (15 min); clamping is safe because exams are only 3 min
 async function scheduleIssueRelease(sessionId, issueId, delaySeconds, releaseAt) {
   if (!delaySeconds) {
     return;
@@ -806,6 +813,7 @@ async function scheduleIssueRelease(sessionId, issueId, delaySeconds, releaseAt)
   );
 }
 
+// Full scan is acceptable here — tables stay small at student lab scale and have no high-cardinality GSI alternatives
 async function scanTable(tableName) {
   const items = [];
   let ExclusiveStartKey;
@@ -1414,6 +1422,7 @@ function normalizeGeneratedIssues(rawIssues, scenario) {
   });
 }
 
+// Deterministic seed issues used when OpenAI is unavailable; keeps the exam functional for demos and grading
 function buildDemoIssueSeed(scenario, persona, index) {
   const topic = scenario.title || "SalesOps training";
   const personaName = persona?.name || "customer";
@@ -1449,6 +1458,7 @@ function buildDemoIssues(scenario, personas) {
   });
 }
 
+// Falls back to demo issues on any 5xx from OpenAI so the exam still works without a valid API key
 async function generateIssuesWithFallback(scenario, personas) {
   try {
     const rawIssues = await requestGeneratedIssues(scenario, personas);

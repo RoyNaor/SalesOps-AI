@@ -1,0 +1,594 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1400 980" width="1400" height="980"
+     font-family="ui-sans-serif, system-ui, -apple-system, sans-serif">
+
+  <defs>
+    <marker id="arr" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#6a9488"/>
+    </marker>
+    <marker id="arr-gold" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto">
+      <polygon points="0 0, 8 3, 0 6" fill="#b08a20"/>
+    </marker>
+  </defs>
+
+  <!-- Canvas -->
+  <rect width="1400" height="980" fill="#ede8de"/>
+
+  <!-- ── Title ── -->
+  <text x="700" y="34" text-anchor="middle" font-size="19" font-weight="700" fill="#1a2420">SalesOps AI — UI Wireframes &amp; Navigation Flow</text>
+  <text x="700" y="52" text-anchor="middle" font-size="10" fill="#7a8a82" letter-spacing="1">Section 04 · UI Design · All Screens &amp; Transitions</text>
+
+  <!-- ════════════════════════════════════════
+       ROW 1 — AUTHENTICATION
+  ════════════════════════════════════════ -->
+  <rect x="56" y="64" width="136" height="16" rx="3" fill="#e2d9c8"/>
+  <text x="64" y="76" font-size="9" font-weight="700" fill="#6b5a3a" letter-spacing="1.5">AUTHENTICATION</text>
+
+  <!-- ── LOGIN (60,82) 290×205 ── -->
+  <g transform="translate(60,82)">
+    <rect width="290" height="205" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <!-- title bar -->
+    <rect width="290" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="290" height="6" fill="#1e3a32"/>
+    <text x="10" y="15" font-size="9" fill="white" font-weight="700">01 — Login / Sign In</text>
+    <!-- LEFT: brand copy -->
+    <rect x="4" y="26" width="136" height="175" rx="3" fill="#f5f0e6"/>
+    <rect x="10" y="33" width="28" height="28" rx="5" fill="#c69a38"/>
+    <text x="24" y="52" text-anchor="middle" font-size="11" font-weight="800" fill="#1e3a32">SA</text>
+    <text x="10" y="74" font-size="7" font-weight="700" fill="#7d5e1c">SALESOPS AI</text>
+    <rect x="10" y="80" width="118" height="9" rx="2" fill="#ddd0ba"/>
+    <rect x="10" y="93" width="106" height="9" rx="2" fill="#ddd0ba"/>
+    <rect x="10" y="106" width="88" height="9" rx="2" fill="#ddd0ba"/>
+    <rect x="10" y="126" width="122" height="20" rx="4" fill="#e8ddc5" stroke="#d1c3a6"/>
+    <text x="71" y="140" text-anchor="middle" font-size="6.5" font-weight="700" fill="#17342f">🔒  Cognito · DynamoDB</text>
+    <text x="71" y="160" text-anchor="middle" font-size="6" fill="#7a8a82">Forgot password? (sub-flow)</text>
+    <!-- RIGHT: auth card -->
+    <rect x="144" y="26" width="142" height="175" rx="3" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="215" y="46" text-anchor="middle" font-size="9" font-weight="700" fill="#1e3a32">Sign in</text>
+    <text x="150" y="62" font-size="7" font-weight="700" fill="#33443e">Email</text>
+    <rect x="150" y="65" width="130" height="16" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="150" y="92" font-size="7" font-weight="700" fill="#33443e">Password</text>
+    <rect x="150" y="95" width="130" height="16" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <rect x="150" y="122" width="130" height="22" rx="4" fill="#1e3a32"/>
+    <text x="215" y="137" text-anchor="middle" font-size="8" font-weight="700" fill="white">Continue  →</text>
+    <text x="215" y="160" text-anchor="middle" font-size="7" fill="#7a8a82">Forgot password?</text>
+    <text x="215" y="176" text-anchor="middle" font-size="7" font-weight="700" fill="#1e3a32">New here? Create account</text>
+  </g>
+
+  <!-- ── SIGNUP (400,82) 290×205 ── -->
+  <g transform="translate(400,82)">
+    <rect width="290" height="205" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="290" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="290" height="6" fill="#1e3a32"/>
+    <text x="10" y="15" font-size="9" fill="white" font-weight="700">02 — Sign Up</text>
+    <!-- LEFT brand -->
+    <rect x="4" y="26" width="136" height="175" rx="3" fill="#f5f0e6"/>
+    <rect x="10" y="33" width="28" height="28" rx="5" fill="#c69a38"/>
+    <text x="24" y="52" text-anchor="middle" font-size="11" font-weight="800" fill="#1e3a32">SA</text>
+    <text x="10" y="74" font-size="7" font-weight="700" fill="#7d5e1c">SALESOPS AI</text>
+    <rect x="10" y="80" width="118" height="9" rx="2" fill="#ddd0ba"/>
+    <rect x="10" y="93" width="100" height="9" rx="2" fill="#ddd0ba"/>
+    <text x="10" y="124" font-size="6.5" fill="#5f6d66">After signup: verify</text>
+    <text x="10" y="136" font-size="6.5" fill="#5f6d66">email code, then sign in.</text>
+    <!-- RIGHT card -->
+    <rect x="144" y="26" width="142" height="175" rx="3" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="215" y="44" text-anchor="middle" font-size="9" font-weight="700" fill="#1e3a32">Create account</text>
+    <text x="150" y="58" font-size="7" font-weight="700" fill="#33443e">Full name</text>
+    <rect x="150" y="61" width="130" height="14" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="150" y="84" font-size="7" font-weight="700" fill="#33443e">Email</text>
+    <rect x="150" y="87" width="130" height="14" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="150" y="110" font-size="7" font-weight="700" fill="#33443e">Password</text>
+    <rect x="150" y="113" width="130" height="14" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="150" y="136" font-size="7" font-weight="700" fill="#33443e">Confirm password</text>
+    <rect x="150" y="139" width="130" height="14" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <rect x="150" y="162" width="130" height="22" rx="4" fill="#1e3a32"/>
+    <text x="215" y="177" text-anchor="middle" font-size="8" font-weight="700" fill="white">Create account  →</text>
+  </g>
+
+  <!-- Login ↔ Signup arrow -->
+  <line x1="354" y1="188" x2="396" y2="188" stroke="#6a9488" stroke-width="1.5" marker-end="url(#arr)"/>
+  <line x1="396" y1="198" x2="354" y2="198" stroke="#6a9488" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="375" y="183" text-anchor="middle" font-size="7" fill="#5a8a7e">sign up / in</text>
+
+  <!-- ── LEGEND BOX (1060,82) ── -->
+  <rect x="1060" y="82" width="300" height="145" rx="6" fill="#fffaf0" stroke="#ddd0ba" stroke-width="1.5"/>
+  <text x="1072" y="102" font-size="10" font-weight="700" fill="#1a2420">Legend</text>
+  <line x1="1072" y1="114" x2="1112" y2="114" stroke="#6a9488" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="1120" y="118" font-size="8" fill="#33443e">Screen transition / navigation</text>
+  <line x1="1072" y1="132" x2="1112" y2="132" stroke="#6a9488" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr)"/>
+  <text x="1120" y="136" font-size="8" fill="#33443e">Role-based redirect</text>
+  <line x1="1072" y1="150" x2="1112" y2="150" stroke="#b08a20" stroke-width="1.5" stroke-dasharray="4,3" marker-end="url(#arr-gold)"/>
+  <text x="1120" y="154" font-size="8" fill="#33443e">Manager path</text>
+  <line x1="1072" y1="168" x2="1112" y2="168" stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+  <line x1="1112" y1="174" x2="1072" y2="174" stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+  <text x="1120" y="174" font-size="8" fill="#33443e">Sidebar navigation (bidirectional)</text>
+  <rect x="1072" y="188" width="14" height="12" rx="2" fill="#1e3a32"/>
+  <text x="1094" y="198" font-size="8" fill="#33443e">Dark sidebar = authenticated shell</text>
+
+  <!-- ════════════════════════════════════════
+       ROW 2 — REP USER FLOW
+  ════════════════════════════════════════ -->
+  <rect x="56" y="350" width="108" height="16" rx="3" fill="#dce9e2"/>
+  <text x="64" y="362" font-size="9" font-weight="700" fill="#1e5c3a" letter-spacing="1.5">REP USER FLOW</text>
+
+  <!-- ── EXAM START (60,368) 300×205 ── -->
+  <g transform="translate(60,368)">
+    <rect width="300" height="205" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="300" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="300" height="6" fill="#1e3a32"/>
+    <text x="10" y="15" font-size="9" fill="white" font-weight="700">03 — Exam Start  (no sidebar)</text>
+    <!-- Full-page layout header -->
+    <rect x="4" y="26" width="292" height="40" rx="3" fill="#f0ece2"/>
+    <text x="12" y="38" font-size="6.5" font-weight="700" fill="#7d5e1c">REP EXAM</text>
+    <text x="12" y="53" font-size="10" font-weight="700" fill="#1a2420">Start Scenario Exam</text>
+    <text x="12" y="63" font-size="7" fill="#5f6d66">Choose scenario, review brief, then start when ready.</text>
+    <!-- LEFT panel: setup -->
+    <rect x="4" y="70" width="142" height="130" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="12" y="84" font-size="8" font-weight="700" fill="#1e3a32">Scenario Setup</text>
+    <text x="12" y="98" font-size="7" font-weight="700" fill="#33443e">Scenario</text>
+    <rect x="12" y="101" width="126" height="18" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="75" y="114" text-anchor="middle" font-size="7" fill="#aaa">Choose published scenario  ▾</text>
+    <rect x="12" y="130" width="126" height="26" rx="4" fill="#1e3a32"/>
+    <text x="75" y="147" text-anchor="middle" font-size="8" font-weight="700" fill="white">▶   Start Exam</text>
+    <!-- RIGHT panel: brief -->
+    <rect x="152" y="70" width="144" height="130" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="160" y="82" font-size="6.5" font-weight="700" fill="#7d5e1c">EXAM BRIEF</text>
+    <text x="160" y="95" font-size="9" font-weight="700" fill="#1a2420">Scenario title</text>
+    <rect x="160" y="100" width="128" height="8" rx="2" fill="#e0d8ca"/>
+    <rect x="160" y="112" width="110" height="8" rx="2" fill="#e0d8ca"/>
+    <rect x="160" y="124" width="90" height="8" rx="2" fill="#e0d8ca"/>
+    <rect x="160" y="148" width="108" height="22" rx="4" fill="#fffdf8" stroke="#ddd0ba"/>
+    <text x="214" y="163" text-anchor="middle" font-size="7" font-weight="700" fill="#1e3a32">⏱  3 minutes</text>
+  </g>
+
+  <!-- ── EXAM PAGE (420,368) 380×205 ── -->
+  <g transform="translate(420,368)">
+    <rect width="380" height="205" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="380" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="380" height="6" fill="#1e3a32"/>
+    <text x="64" y="15" font-size="9" fill="white" font-weight="700">04 — Active Exam</text>
+    <!-- SIDEBAR -->
+    <rect x="0" y="22" width="58" height="183" rx="0" fill="#1e3a32"/>
+    <rect x="4" y="28" width="50" height="30" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="47" text-anchor="middle" font-size="10" font-weight="800" fill="#c69a38">SA</text>
+    <rect x="4" y="64" width="50" height="20" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="78" text-anchor="middle" font-size="6.5" fill="#fff7e8">Exam</text>
+    <text x="29" y="198" text-anchor="middle" font-size="6" fill="#7aa090">Sign out</text>
+    <!-- INBOX column -->
+    <line x1="58" y1="22" x2="58" y2="205" stroke="#ddd0ba"/>
+    <line x1="186" y1="22" x2="186" y2="205" stroke="#ddd0ba"/>
+    <text x="64" y="36" font-size="6" font-weight="700" fill="#7a8a82">ACTIVE EXAM</text>
+    <text x="64" y="50" font-size="8" font-weight="700" fill="#1a2420">Inbox</text>
+    <rect x="160" y="38" width="18" height="18" rx="9" fill="#fffaf0" stroke="#d7cdb8"/>
+    <text x="169" y="51" text-anchor="middle" font-size="7" font-weight="700" fill="#41554d">3</text>
+    <!-- session strip -->
+    <rect x="62" y="58" width="120" height="18" rx="3" fill="#f4eddf" stroke="#ddd0ba"/>
+    <text x="68" y="70" font-size="6" font-weight="700" fill="#17342f">Q2 Objections session</text>
+    <!-- issue items -->
+    <rect x="62" y="80" width="120" height="26" rx="4" fill="#fffdf8" stroke="#d29d3f"/>
+    <text x="68" y="89" font-size="5.5" font-weight="700" fill="#7a8a82">MEDIUM</text>
+    <text x="68" y="101" font-size="7" font-weight="700" fill="#1a2420">Pricing question</text>
+    <rect x="62" y="110" width="120" height="26" rx="4" fill="#fffdf8" stroke="#2d6d5f"/>
+    <text x="68" y="126" font-size="7" font-weight="700" fill="#1a2420">Delivery delay  ●</text>
+    <rect x="62" y="140" width="120" height="26" rx="4" fill="#fffdf8" stroke="#ddd0ba"/>
+    <text x="68" y="156" font-size="7" font-weight="700" fill="#1a2420">Refund request</text>
+    <!-- RESPONSE column -->
+    <text x="192" y="36" font-size="6" font-weight="700" fill="#7a8a82">SELECTED INQUIRY</text>
+    <text x="192" y="50" font-size="8" font-weight="700" fill="#1a2420">Pricing question</text>
+    <!-- timer badge -->
+    <rect x="334" y="38" width="40" height="18" rx="9" fill="#fffaf0" stroke="#d7cdb8"/>
+    <text x="354" y="51" text-anchor="middle" font-size="7" font-weight="700" fill="#41554d">2:45</text>
+    <!-- customer bubble -->
+    <rect x="192" y="58" width="148" height="32" rx="4" fill="#f4eddf" stroke="#ddd0ba"/>
+    <text x="198" y="68" font-size="6" font-weight="700" fill="#7a8a82">Customer</text>
+    <text x="198" y="80" font-size="6.5" fill="#17342f">Can you explain the pricing tiers?</text>
+    <!-- rep bubble -->
+    <rect x="228" y="96" width="148" height="26" rx="4" fill="#1e3a32"/>
+    <text x="234" y="106" font-size="6" font-weight="700" fill="#c6d7d0">You</text>
+    <text x="234" y="117" font-size="6.5" fill="white">Sure! Our pricing is...</text>
+    <!-- editor -->
+    <rect x="192" y="134" width="182" height="30" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="198" y="153" font-size="7" fill="#aaa">Draft representative response...</text>
+    <!-- actions -->
+    <rect x="192" y="172" width="100" height="22" rx="4" fill="#1e3a32"/>
+    <text x="242" y="187" text-anchor="middle" font-size="7.5" font-weight="700" fill="white">Submit response  →</text>
+    <rect x="298" y="172" width="76" height="22" rx="4" fill="#eadfc7"/>
+    <text x="336" y="187" text-anchor="middle" font-size="7.5" font-weight="700" fill="#1e3a32">Done  ✓</text>
+    <!-- End-of-exam modal note -->
+    <rect x="192" y="60" width="148" height="0" fill="none"/>
+    <text x="354" y="195" text-anchor="end" font-size="6" fill="#7a8a82" font-style="italic">Modal overlay on exam end ↑</text>
+  </g>
+
+  <!-- ── EXAM RESULTS (860,368) 380×205 ── -->
+  <g transform="translate(860,368)">
+    <rect width="380" height="205" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="380" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="380" height="6" fill="#1e3a32"/>
+    <text x="64" y="15" font-size="9" fill="white" font-weight="700">05 — Exam Results</text>
+    <!-- sidebar -->
+    <rect x="0" y="22" width="58" height="183" fill="#1e3a32"/>
+    <rect x="4" y="28" width="50" height="30" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="47" text-anchor="middle" font-size="10" font-weight="800" fill="#c69a38">SA</text>
+    <rect x="4" y="64" width="50" height="20" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="78" text-anchor="middle" font-size="6.5" fill="#fff7e8">Results</text>
+    <text x="29" y="198" text-anchor="middle" font-size="6" fill="#7aa090">Sign out</text>
+    <!-- HERO -->
+    <rect x="58" y="22" width="318" height="46" fill="#fffaf0"/>
+    <line x1="58" y1="68" x2="376" y2="68" stroke="#ddd0ba"/>
+    <text x="64" y="34" font-size="6" font-weight="700" fill="#7d5e1c">EXAM EVALUATION</text>
+    <text x="64" y="50" font-size="11" font-weight="700" fill="#1a2420">Final Score</text>
+    <text x="64" y="62" font-size="7" fill="#5f6d66">May 27, 2026 · 14:30</text>
+    <!-- score dial -->
+    <circle cx="352" cy="46" r="22" fill="#fffaf0" stroke="#e0d3bb" stroke-width="7"/>
+    <circle cx="352" cy="46" r="22" fill="none" stroke="#2d6d5f" stroke-width="7"
+            stroke-dasharray="118 64" stroke-dashoffset="-36" transform="rotate(-90 352 46)"/>
+    <text x="352" y="50" text-anchor="middle" font-size="10" font-weight="800" fill="#1e3a32">87</text>
+    <!-- rubric panel (tall left) -->
+    <rect x="62" y="72" width="142" height="128" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="68" y="86" font-size="7.5" font-weight="700" fill="#1a2420">⊙  Rubric</text>
+    <!-- rubric rows -->
+    <text x="68" y="100" font-size="6.5" fill="#33443e">Kindness  ·  25%</text>
+    <rect x="128" y="93" width="66" height="8" rx="2" fill="#e5dbc7"/>
+    <rect x="128" y="93" width="52" height="8" rx="2" fill="#2d6d5f"/>
+    <text x="68" y="116" font-size="6.5" fill="#33443e">Professionalism  ·  25%</text>
+    <rect x="128" y="109" width="66" height="8" rx="2" fill="#e5dbc7"/>
+    <rect x="128" y="109" width="58" height="8" rx="2" fill="#2d6d5f"/>
+    <text x="68" y="132" font-size="6.5" fill="#33443e">Resolution  ·  25%</text>
+    <rect x="128" y="125" width="66" height="8" rx="2" fill="#e5dbc7"/>
+    <rect x="128" y="125" width="44" height="8" rx="2" fill="#2d6d5f"/>
+    <text x="68" y="148" font-size="6.5" fill="#33443e">Clarity  ·  15%</text>
+    <rect x="128" y="141" width="66" height="8" rx="2" fill="#e5dbc7"/>
+    <rect x="128" y="141" width="56" height="8" rx="2" fill="#2d6d5f"/>
+    <text x="68" y="164" font-size="6.5" fill="#33443e">Helpful ideas  ·  10%</text>
+    <rect x="128" y="157" width="66" height="8" rx="2" fill="#e5dbc7"/>
+    <rect x="128" y="157" width="30" height="8" rx="2" fill="#2d6d5f"/>
+    <!-- 4 insight panels 2×2 -->
+    <rect x="208" y="72" width="80" height="58" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="214" y="85" font-size="7" font-weight="700" fill="#1a2420">◎  AI Notes</text>
+    <rect x="214" y="90" width="66" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="214" y="101" width="56" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="214" y="112" width="50" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="292" y="72" width="80" height="58" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="298" y="85" font-size="7" font-weight="700" fill="#1a2420">✓  Strengths</text>
+    <rect x="298" y="90" width="66" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="298" y="101" width="50" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="208" y="134" width="80" height="58" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="214" y="147" font-size="7" font-weight="700" fill="#1a2420">↑  Growth Areas</text>
+    <rect x="214" y="152" width="66" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="214" y="163" width="52" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="292" y="134" width="80" height="58" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="298" y="147" font-size="7" font-weight="700" fill="#1a2420">💡  Practice Ideas</text>
+    <rect x="298" y="152" width="66" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="298" y="163" width="52" height="7" rx="2" fill="#e0d8ca"/>
+    <!-- new exam button -->
+    <rect x="280" y="195" width="90" height="0" fill="none"/>
+    <text x="372" y="198" text-anchor="end" font-size="7" font-weight="700" fill="#1e3a32">New exam →</text>
+  </g>
+
+  <!-- ════════════════════════════════════════
+       ROW 3 — MANAGER USER FLOW
+  ════════════════════════════════════════ -->
+  <rect x="56" y="636" width="130" height="16" rx="3" fill="#f0e5cd"/>
+  <text x="64" y="648" font-size="9" font-weight="700" fill="#7d5e1c" letter-spacing="1.5">MANAGER USER FLOW</text>
+
+  <!-- ── DASHBOARD (60,656) 335×210 ── -->
+  <g transform="translate(60,656)">
+    <rect width="335" height="210" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="335" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="335" height="6" fill="#1e3a32"/>
+    <text x="64" y="15" font-size="9" fill="white" font-weight="700">06 — Dashboard</text>
+    <!-- sidebar -->
+    <rect x="0" y="22" width="58" height="188" fill="#1e3a32"/>
+    <rect x="4" y="28" width="50" height="30" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="47" text-anchor="middle" font-size="10" font-weight="800" fill="#c69a38">SA</text>
+    <rect x="4" y="64" width="50" height="20" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="78" text-anchor="middle" font-size="6" fill="#fff7e8">Dashboard</text>
+    <rect x="4" y="88" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="102" text-anchor="middle" font-size="6" fill="#dce9e2">Content</text>
+    <rect x="4" y="112" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="126" text-anchor="middle" font-size="6" fill="#dce9e2">Users</text>
+    <text x="29" y="202" text-anchor="middle" font-size="6" fill="#7aa090">Sign out</text>
+    <!-- main -->
+    <text x="64" y="36" font-size="6.5" font-weight="700" fill="#7d5e1c">MANAGEMENT</text>
+    <text x="64" y="50" font-size="9" font-weight="700" fill="#1a2420">Rep Performance</text>
+    <!-- metric strip 5 cards -->
+    <rect x="64" y="56" width="52" height="28" rx="3" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="90" y="66" text-anchor="middle" font-size="5.5" fill="#5f6d66">Avg Success</text>
+    <text x="90" y="79" text-anchor="middle" font-size="9" font-weight="700" fill="#1a2420">84%</text>
+    <rect x="120" y="56" width="48" height="28" rx="3" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="144" y="66" text-anchor="middle" font-size="5.5" fill="#5f6d66">Pass rate</text>
+    <text x="144" y="79" text-anchor="middle" font-size="9" font-weight="700" fill="#1a2420">72%</text>
+    <rect x="172" y="56" width="48" height="28" rx="3" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="196" y="66" text-anchor="middle" font-size="5.5" fill="#5f6d66">Reps eval.</text>
+    <text x="196" y="79" text-anchor="middle" font-size="9" font-weight="700" fill="#1a2420">12</text>
+    <rect x="224" y="56" width="48" height="28" rx="3" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="248" y="66" text-anchor="middle" font-size="5.5" fill="#5f6d66">Completed</text>
+    <text x="248" y="79" text-anchor="middle" font-size="9" font-weight="700" fill="#1a2420">48</text>
+    <rect x="276" y="56" width="53" height="28" rx="3" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="303" y="66" text-anchor="middle" font-size="5.5" fill="#5f6d66">Needs eval.</text>
+    <text x="303" y="79" text-anchor="middle" font-size="9" font-weight="700" fill="#1a2420">7</text>
+    <!-- chart panel (pie) -->
+    <rect x="64" y="90" width="164" height="76" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="70" y="103" font-size="7" font-weight="700" fill="#1a2420">Success Bands</text>
+    <circle cx="112" cy="142" r="24" fill="#eadfc7"/>
+    <path d="M112 142 L112 118 A24 24 0 0 1 133 154 Z" fill="#2d6d5f"/>
+    <path d="M112 142 L133 154 A24 24 0 0 1 98 166 Z" fill="#6aad5f"/>
+    <path d="M112 142 L98 166 A24 24 0 0 1 89 121 Z" fill="#d4a832"/>
+    <rect x="142" y="110" width="8" height="8" rx="1" fill="#2d6d5f"/>
+    <text x="154" y="118" font-size="6" fill="#33443e">Excellent 40%</text>
+    <rect x="142" y="122" width="8" height="8" rx="1" fill="#6aad5f"/>
+    <text x="154" y="130" font-size="6" fill="#33443e">Good  35%</text>
+    <rect x="142" y="134" width="8" height="8" rx="1" fill="#d4a832"/>
+    <text x="154" y="142" font-size="6" fill="#33443e">Fair  25%</text>
+    <!-- coaching queue -->
+    <rect x="232" y="90" width="97" height="76" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="238" y="103" font-size="7" font-weight="700" fill="#1a2420">Coaching Queue</text>
+    <rect x="238" y="109" width="84" height="14" rx="3" fill="#fffdf8" stroke="#eadfc7"/>
+    <text x="244" y="120" font-size="6" fill="#33443e">Alex Johnson  · 62%</text>
+    <rect x="238" y="127" width="84" height="14" rx="3" fill="#fffdf8" stroke="#eadfc7"/>
+    <text x="244" y="138" font-size="6" fill="#33443e">Sarah Lee  · 55%</text>
+    <rect x="238" y="145" width="84" height="14" rx="3" fill="#fffdf8" stroke="#eadfc7"/>
+    <text x="244" y="156" font-size="6" fill="#33443e">Tom Baker  · 48%</text>
+    <!-- rep table -->
+    <rect x="64" y="172" width="265" height="30" rx="4" fill="white" stroke="#ddd0ba"/>
+    <rect x="64" y="172" width="265" height="13" rx="3" fill="#f6f1e7"/>
+    <text x="70" y="182" font-size="5.5" font-weight="700" fill="#65746d">REP NAME</text>
+    <text x="138" y="182" font-size="5.5" font-weight="700" fill="#65746d">ATTEMPTS</text>
+    <text x="188" y="182" font-size="5.5" font-weight="700" fill="#65746d">AVG SCORE</text>
+    <text x="252" y="182" font-size="5.5" font-weight="700" fill="#65746d">PASS%</text>
+    <text x="70" y="196" font-size="6" fill="#33443e">Alex Johnson</text>
+    <text x="152" y="196" text-anchor="middle" font-size="6" fill="#33443e">8</text>
+    <text x="206" y="196" text-anchor="middle" font-size="6" fill="#33443e">76</text>
+    <text x="262" y="196" text-anchor="middle" font-size="6" fill="#285b31">62%</text>
+  </g>
+
+  <!-- ── PERSONAS (455,656) 265×210 ── -->
+  <g transform="translate(455,656)">
+    <rect width="265" height="210" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="265" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="265" height="6" fill="#1e3a32"/>
+    <text x="64" y="15" font-size="9" fill="white" font-weight="700">07 — Personas</text>
+    <!-- sidebar -->
+    <rect x="0" y="22" width="58" height="188" fill="#1e3a32"/>
+    <rect x="4" y="28" width="50" height="30" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="47" text-anchor="middle" font-size="10" font-weight="800" fill="#c69a38">SA</text>
+    <rect x="4" y="64" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="78" text-anchor="middle" font-size="6" fill="#dce9e2">Dashboard</text>
+    <rect x="4" y="88" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="102" text-anchor="middle" font-size="6" fill="#dce9e2">Content ▾</text>
+    <rect x="4" y="110" width="50" height="18" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="123" text-anchor="middle" font-size="6" fill="#fff7e8">Personas</text>
+    <rect x="4" y="132" width="50" height="18" rx="4" fill="none"/>
+    <text x="29" y="145" text-anchor="middle" font-size="6" fill="#dce9e2">Scenarios</text>
+    <rect x="4" y="154" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="168" text-anchor="middle" font-size="6" fill="#dce9e2">Users</text>
+    <text x="29" y="202" text-anchor="middle" font-size="6" fill="#7aa090">Sign out</text>
+    <!-- main -->
+    <text x="64" y="36" font-size="6.5" font-weight="700" fill="#7d5e1c">CONTENT LIBRARY</text>
+    <text x="64" y="50" font-size="9" font-weight="700" fill="#1a2420">Personas</text>
+    <!-- command bar -->
+    <rect x="64" y="56" width="195" height="22" rx="4" fill="white" stroke="#ddd0ba"/>
+    <rect x="68" y="60" width="100" height="14" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="74" y="70" font-size="6" fill="#aaa">🔍 Search...</text>
+    <rect x="174" y="60" width="79" height="14" rx="3" fill="#1e3a32"/>
+    <text x="213" y="70" text-anchor="middle" font-size="6.5" fill="white">+  Add Persona</text>
+    <!-- table -->
+    <rect x="64" y="82" width="195" height="120" rx="4" fill="white" stroke="#ddd0ba"/>
+    <rect x="64" y="82" width="195" height="14" fill="#f6f1e7"/>
+    <text x="70" y="92" font-size="5.5" font-weight="700" fill="#65746d">NAME</text>
+    <text x="128" y="92" font-size="5.5" font-weight="700" fill="#65746d">DESCRIPTION</text>
+    <text x="218" y="92" font-size="5.5" font-weight="700" fill="#65746d">STATUS</text>
+    <line x1="64" y1="96" x2="259" y2="96" stroke="#e5dbc7"/>
+    <text x="70" y="107" font-size="6.5" font-weight="700" fill="#1a2420">Anna Chen</text>
+    <rect x="120" y="100" width="80" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="218" y="100" width="34" height="11" rx="6" fill="#e4f0df"/>
+    <text x="235" y="110" text-anchor="middle" font-size="5.5" fill="#285b31">Active</text>
+    <line x1="64" y1="115" x2="259" y2="115" stroke="#e5dbc7"/>
+    <text x="70" y="126" font-size="6.5" font-weight="700" fill="#1a2420">Bob Martinez</text>
+    <rect x="120" y="119" width="70" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="218" y="119" width="34" height="11" rx="6" fill="#e4f0df"/>
+    <text x="235" y="129" text-anchor="middle" font-size="5.5" fill="#285b31">Active</text>
+    <line x1="64" y1="134" x2="259" y2="134" stroke="#e5dbc7"/>
+    <text x="70" y="145" font-size="6.5" font-weight="700" fill="#1a2420">Carol Smith</text>
+    <rect x="120" y="138" width="80" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="218" y="138" width="34" height="11" rx="6" fill="#f0e5cd"/>
+    <text x="235" y="148" text-anchor="middle" font-size="5.5" fill="#6b5118">Draft</text>
+    <line x1="64" y1="153" x2="259" y2="153" stroke="#e5dbc7"/>
+    <text x="70" y="164" font-size="6.5" font-weight="700" fill="#1a2420">David Kim</text>
+    <rect x="120" y="157" width="64" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="218" y="157" width="34" height="11" rx="6" fill="#e4f0df"/>
+    <text x="235" y="167" text-anchor="middle" font-size="5.5" fill="#285b31">Active</text>
+    <line x1="64" y1="172" x2="259" y2="172" stroke="#e5dbc7"/>
+    <text x="70" y="184" font-size="6" fill="#65746d">4 personas</text>
+    <!-- edit modal hint -->
+    <rect x="64" y="190" width="195" height="14" rx="3" fill="#fff5d8" stroke="#e1c06a"/>
+    <text x="161" y="200" text-anchor="middle" font-size="6" fill="#6b5118">Edit modal opens on row click</text>
+  </g>
+
+  <!-- ── SCENARIO BUILDER (778,656) 340×210 ── -->
+  <g transform="translate(778,656)">
+    <rect width="340" height="210" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="340" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="340" height="6" fill="#1e3a32"/>
+    <text x="64" y="15" font-size="9" fill="white" font-weight="700">08 — Scenario Builder</text>
+    <!-- sidebar -->
+    <rect x="0" y="22" width="58" height="188" fill="#1e3a32"/>
+    <rect x="4" y="28" width="50" height="30" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="47" text-anchor="middle" font-size="10" font-weight="800" fill="#c69a38">SA</text>
+    <rect x="4" y="64" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="78" text-anchor="middle" font-size="6" fill="#dce9e2">Dashboard</text>
+    <rect x="4" y="88" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="102" text-anchor="middle" font-size="6" fill="#dce9e2">Content ▾</text>
+    <rect x="4" y="110" width="50" height="18" rx="4" fill="none"/>
+    <text x="29" y="123" text-anchor="middle" font-size="6" fill="#dce9e2">Personas</text>
+    <rect x="4" y="132" width="50" height="18" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="145" text-anchor="middle" font-size="6" fill="#fff7e8">Scenarios</text>
+    <rect x="4" y="154" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="168" text-anchor="middle" font-size="6" fill="#dce9e2">Users</text>
+    <text x="29" y="202" text-anchor="middle" font-size="6" fill="#7aa090">Sign out</text>
+    <!-- main -->
+    <text x="64" y="36" font-size="6.5" font-weight="700" fill="#7d5e1c">CONTENT LIBRARY</text>
+    <text x="64" y="50" font-size="9" font-weight="700" fill="#1a2420">Scenarios</text>
+    <!-- command bar -->
+    <rect x="64" y="56" width="270" height="22" rx="4" fill="white" stroke="#ddd0ba"/>
+    <rect x="68" y="60" width="84" height="14" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="74" y="70" font-size="6" fill="#aaa">🔍 Search...</text>
+    <text x="162" y="70" font-size="6" fill="#65746d">Status ▾</text>
+    <rect x="192" y="60" width="56" height="14" rx="3" fill="#1e3a32"/>
+    <text x="220" y="70" text-anchor="middle" font-size="6.5" fill="white">+  New</text>
+    <rect x="252" y="60" width="76" height="14" rx="3" fill="#eadfc7"/>
+    <text x="290" y="70" text-anchor="middle" font-size="6.5" fill="#1e3a32">AI Generate</text>
+    <!-- scenario table (left half) -->
+    <rect x="64" y="82" width="150" height="122" rx="4" fill="white" stroke="#ddd0ba"/>
+    <rect x="64" y="82" width="150" height="14" fill="#f6f1e7"/>
+    <text x="70" y="92" font-size="5.5" font-weight="700" fill="#65746d">TITLE</text>
+    <text x="162" y="92" font-size="5.5" font-weight="700" fill="#65746d">STATUS</text>
+    <!-- selected row highlight -->
+    <rect x="64" y="96" width="150" height="20" fill="#eef4ee"/>
+    <line x1="64" y1="96" x2="64" y2="116" stroke="#2d6d5f" stroke-width="4"/>
+    <text x="70" y="109" font-size="6.5" font-weight="700" fill="#1a2420">Q2 Objections</text>
+    <rect x="162" y="100" width="44" height="11" rx="6" fill="#e4f0df"/>
+    <text x="184" y="110" text-anchor="middle" font-size="5.5" fill="#285b31">Published</text>
+    <line x1="64" y1="116" x2="214" y2="116" stroke="#e5dbc7"/>
+    <text x="70" y="128" font-size="6.5" fill="#1a2420">Enterprise Renewal</text>
+    <rect x="162" y="120" width="44" height="11" rx="6" fill="#f0e5cd"/>
+    <text x="184" y="130" text-anchor="middle" font-size="5.5" fill="#6b5118">Draft</text>
+    <line x1="64" y1="136" x2="214" y2="136" stroke="#e5dbc7"/>
+    <text x="70" y="148" font-size="6.5" fill="#1a2420">Cold Outreach</text>
+    <line x1="64" y1="156" x2="214" y2="156" stroke="#e5dbc7"/>
+    <text x="70" y="168" font-size="6.5" fill="#1a2420">SMB Intro Call</text>
+    <line x1="64" y1="176" x2="214" y2="176" stroke="#e5dbc7"/>
+    <text x="70" y="188" font-size="6" fill="#65746d">4 scenarios</text>
+    <!-- detail panel (right half) -->
+    <rect x="218" y="82" width="116" height="122" rx="4" fill="#fffaf0" stroke="#ddd0ba"/>
+    <text x="224" y="94" font-size="7" font-weight="700" fill="#1a2420">Q2 Objections</text>
+    <rect x="224" y="98" width="102" height="7" rx="2" fill="#e0d8ca"/>
+    <rect x="224" y="109" width="84" height="7" rx="2" fill="#e0d8ca"/>
+    <text x="224" y="126" font-size="6" font-weight="700" fill="#1a2420">Personas tagged</text>
+    <rect x="224" y="130" width="46" height="12" rx="6" fill="#e9f0e4"/>
+    <text x="247" y="140" text-anchor="middle" font-size="5.5" fill="#2b5630">Anna Chen</text>
+    <text x="224" y="154" font-size="6" font-weight="700" fill="#1a2420">Issues (3)</text>
+    <rect x="224" y="158" width="104" height="10" rx="2" fill="#f4eddf" stroke="#d29d3f"/>
+    <text x="228" y="166" font-size="5.5" fill="#7a8a82">Issue 1: Pricing question</text>
+    <rect x="224" y="172" width="104" height="10" rx="2" fill="#fffdf8" stroke="#ddd0ba"/>
+    <text x="228" y="180" font-size="5.5" fill="#7a8a82">Issue 2: Delivery delay</text>
+    <rect x="224" y="186" width="46" height="9" rx="2" fill="#1e3a32"/>
+    <text x="247" y="194" text-anchor="middle" font-size="5.5" fill="white">Edit</text>
+    <rect x="276" y="186" width="46" height="9" rx="2" fill="#eadfc7"/>
+    <text x="299" y="194" text-anchor="middle" font-size="5.5" fill="#1e3a32">Publish</text>
+  </g>
+
+  <!-- ── USERS (1176,656) 180×210 ── -->
+  <g transform="translate(1176,656)">
+    <rect width="180" height="210" rx="6" fill="white" stroke="#c2b6a2" stroke-width="1.5"/>
+    <rect width="180" height="22" rx="6" fill="#1e3a32"/>
+    <rect y="16" width="180" height="6" fill="#1e3a32"/>
+    <text x="64" y="15" font-size="9" fill="white" font-weight="700">09 — Users</text>
+    <!-- sidebar -->
+    <rect x="0" y="22" width="58" height="188" fill="#1e3a32"/>
+    <rect x="4" y="28" width="50" height="30" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="47" text-anchor="middle" font-size="10" font-weight="800" fill="#c69a38">SA</text>
+    <rect x="4" y="64" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="78" text-anchor="middle" font-size="6" fill="#dce9e2">Dashboard</text>
+    <rect x="4" y="88" width="50" height="20" rx="4" fill="none"/>
+    <text x="29" y="102" text-anchor="middle" font-size="6" fill="#dce9e2">Content</text>
+    <rect x="4" y="112" width="50" height="20" rx="4" fill="#2a4a3e"/>
+    <text x="29" y="126" text-anchor="middle" font-size="6" fill="#fff7e8">Users</text>
+    <text x="29" y="202" text-anchor="middle" font-size="6" fill="#7aa090">Sign out</text>
+    <!-- main -->
+    <text x="64" y="36" font-size="6.5" font-weight="700" fill="#7d5e1c">MANAGEMENT</text>
+    <text x="64" y="50" font-size="9" font-weight="700" fill="#1a2420">Users</text>
+    <!-- search -->
+    <rect x="64" y="56" width="110" height="18" rx="3" fill="#fffdf8" stroke="#c9bea8"/>
+    <text x="70" y="68" font-size="6" fill="#aaa">🔍 Search users...</text>
+    <!-- table -->
+    <rect x="64" y="78" width="110" height="126" rx="4" fill="white" stroke="#ddd0ba"/>
+    <rect x="64" y="78" width="110" height="14" fill="#f6f1e7"/>
+    <text x="70" y="88" font-size="5.5" font-weight="700" fill="#65746d">NAME / EMAIL</text>
+    <text x="140" y="88" font-size="5.5" font-weight="700" fill="#65746d">ROLE</text>
+    <line x1="64" y1="92" x2="174" y2="92" stroke="#e5dbc7"/>
+    <text x="70" y="103" font-size="6" fill="#1a2420">Alex J.</text>
+    <rect x="136" y="96" width="32" height="10" rx="5" fill="#f0e5cd"/>
+    <text x="152" y="105" text-anchor="middle" font-size="5.5" fill="#6b5118">Rep</text>
+    <line x1="64" y1="110" x2="174" y2="110" stroke="#e5dbc7"/>
+    <text x="70" y="121" font-size="6" fill="#1a2420">Sarah L.</text>
+    <rect x="136" y="114" width="32" height="10" rx="5" fill="#f0e5cd"/>
+    <text x="152" y="123" text-anchor="middle" font-size="5.5" fill="#6b5118">Rep</text>
+    <line x1="64" y1="128" x2="174" y2="128" stroke="#e5dbc7"/>
+    <text x="70" y="139" font-size="6" fill="#1a2420">Roy N.</text>
+    <rect x="130" y="132" width="40" height="10" rx="5" fill="#e9f0e4"/>
+    <text x="150" y="141" text-anchor="middle" font-size="5" fill="#2b5630">Manager</text>
+    <line x1="64" y1="146" x2="174" y2="146" stroke="#e5dbc7"/>
+    <text x="70" y="157" font-size="6" fill="#1a2420">Tom B.</text>
+    <rect x="136" y="150" width="32" height="10" rx="5" fill="#f0e5cd"/>
+    <text x="152" y="159" text-anchor="middle" font-size="5.5" fill="#6b5118">Rep</text>
+    <line x1="64" y1="164" x2="174" y2="164" stroke="#e5dbc7"/>
+    <text x="70" y="175" font-size="6" fill="#1a2420">Carol S.</text>
+    <rect x="136" y="168" width="32" height="10" rx="5" fill="#f0e5cd"/>
+    <text x="152" y="177" text-anchor="middle" font-size="5.5" fill="#6b5118">Rep</text>
+    <line x1="64" y1="182" x2="174" y2="182" stroke="#e5dbc7"/>
+    <text x="70" y="193" font-size="6" fill="#65746d">5 users total</text>
+  </g>
+
+  <!-- ════════════════════════════════════════
+       NAVIGATION FLOW ARROWS
+  ════════════════════════════════════════ -->
+
+  <!-- Login → Signup (bidirectional) already drawn above -->
+
+  <!-- Login bottom → Rep path (ExamStart) — dashed green -->
+  <path d="M 175 289 C 175 330 200 355 200 368"
+        stroke="#6a9488" stroke-width="1.5" fill="none"
+        stroke-dasharray="5,3" marker-end="url(#arr)"/>
+  <text x="148" y="330" font-size="7" fill="#5a8a7e" font-style="italic">Rep login</text>
+
+  <!-- Login bottom → Manager path (Dashboard) — dashed gold -->
+  <path d="M 245 289 C 245 420 245 560 228 656"
+        stroke="#b08a20" stroke-width="1.5" fill="none"
+        stroke-dasharray="5,3" marker-end="url(#arr-gold)"/>
+  <text x="265" y="470" font-size="7" fill="#a07a1a" font-style="italic">Manager login</text>
+
+  <!-- ExamStart → Exam -->
+  <line x1="362" y1="470" x2="418" y2="470"
+        stroke="#6a9488" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="390" y="464" text-anchor="middle" font-size="7" fill="#5a8a7e">Start</text>
+
+  <!-- Exam → Results -->
+  <line x1="802" y1="470" x2="858" y2="470"
+        stroke="#6a9488" stroke-width="1.5" marker-end="url(#arr)"/>
+  <text x="830" y="464" text-anchor="middle" font-size="7" fill="#5a8a7e">Evaluate</text>
+
+  <!-- Results → ExamStart (new exam arc) -->
+  <path d="M 1050 375 C 1050 340 640 315 212 362"
+        stroke="#6a9488" stroke-width="1.2" fill="none"
+        stroke-dasharray="5,3" marker-end="url(#arr)"/>
+  <text x="620" y="326" text-anchor="middle" font-size="7" fill="#5a8a7e">New exam</text>
+
+  <!-- Manager sidebar nav: Dashboard ↔ Personas ↔ Scenarios ↔ Users (bottom line) -->
+  <line x1="228" y1="876" x2="452" y2="876"
+        stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+  <line x1="452" y1="882" x2="228" y2="882"
+        stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+
+  <line x1="622" y1="876" x2="774" y2="876"
+        stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+  <line x1="774" y1="882" x2="622" y2="882"
+        stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+
+  <line x1="944" y1="876" x2="1172" y2="876"
+        stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+  <line x1="1172" y1="882" x2="944" y2="882"
+        stroke="#b08a20" stroke-width="1.2" marker-end="url(#arr-gold)"/>
+
+  <text x="340" y="897" text-anchor="middle" font-size="7" fill="#a07a1a">Sidebar nav</text>
+  <text x="698" y="897" text-anchor="middle" font-size="7" fill="#a07a1a">Sidebar nav</text>
+  <text x="1058" y="897" text-anchor="middle" font-size="7" fill="#a07a1a">Sidebar nav</text>
+
+  <!-- Role badges -->
+  <rect x="166" y="350" width="60" height="14" rx="7" fill="#dce9e2" stroke="#9dc9b2"/>
+  <text x="196" y="360" text-anchor="middle" font-size="7" font-weight="700" fill="#1e5c3a">Rep only</text>
+
+  <rect x="196" y="636" width="84" height="14" rx="7" fill="#f0e5cd" stroke="#d4a832"/>
+  <text x="238" y="646" text-anchor="middle" font-size="7" font-weight="700" fill="#6b5118">Manager only</text>
+
+</svg>

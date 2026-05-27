@@ -1,3 +1,4 @@
+// Lightweight health-check endpoint used by API Gateway and load balancer probes
 "use strict";
 
 const service = process.env.SERVICE_NAME || "salesops-ai";

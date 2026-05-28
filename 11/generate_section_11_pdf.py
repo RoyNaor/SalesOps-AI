@@ -206,7 +206,7 @@ def parse_markdown(markdown: str, styles_map: dict) -> list:
                                    bulletText="–"))
             continue
 
-        if line.startswith(("Source of truth:", "Audience:", "Language:")):
+        if line.startswith(("Source of truth:", "Audience:", "Language:", "Project:", "Prepared:")):
             continue
         story.append(Paragraph(inline_markup(line), styles_map["body"]))
 

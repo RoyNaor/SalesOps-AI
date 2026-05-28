@@ -147,7 +147,7 @@ def parse_markdown(markdown: str):
             story.append(Paragraph(inline_markup(line[2:]), styles["bullet"], bulletText="-"))
             continue
 
-        if line.startswith(("Source of truth:", "Audience:", "Language:")):
+        if line.startswith(("Source of truth:", "Audience:", "Language:", "Project:", "Prepared:")):
             continue
         story.append(Paragraph(inline_markup(line), styles["body"]))
 

@@ -23,10 +23,11 @@ SOURCE = ROOT / "section-03-architecture-explanation.md"
 OUTPUT = ROOT / "section-03-architecture-explanation.pdf"
 
 
-ACCENT = colors.HexColor("#255f85")
-TEXT = colors.HexColor("#1f2933")
-MUTED = colors.HexColor("#5f6c7b")
-RULE = colors.HexColor("#d7dee8")
+ACCENT = colors.HexColor("#1a5c4a")
+SLATE  = colors.HexColor("#17324d")
+TEXT   = colors.HexColor("#20252b")
+MUTED  = colors.HexColor("#5b6570")
+RULE   = colors.HexColor("#c8e6df")
 
 
 def escape(text: str) -> str:
@@ -53,7 +54,7 @@ def make_styles():
             fontName="Helvetica-Bold",
             fontSize=22,
             leading=28,
-            textColor=ACCENT,
+            textColor=SLATE,
             spaceAfter=10,
             alignment=TA_LEFT,
         ),
@@ -133,6 +134,9 @@ def markdown_to_story(markdown: str):
             flush_paragraph()
             continue
 
+        if line.startswith(("Source of truth:", "Audience:", "Language:")):
+            continue
+
         if line.startswith("# "):
             flush_paragraph()
             story.append(Paragraph(inline_markup(line[2:].strip()), styles["title"]))
@@ -173,7 +177,7 @@ def footer(canvas, doc):
     canvas.line(doc.leftMargin, 1.45 * cm, width - doc.rightMargin, 1.45 * cm)
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(MUTED)
-    canvas.drawString(doc.leftMargin, 1.05 * cm, "SalesOps AI - Section 03 Architecture Explanation")
+    canvas.drawString(doc.leftMargin, 1.05 * cm, "Group - E  |  SalesOps AI  |  Section 03")
     canvas.drawRightString(width - doc.rightMargin, 1.05 * cm, f"Page {doc.page}")
     canvas.restoreState()
 
@@ -186,9 +190,9 @@ def build_pdf():
         leftMargin=1.65 * cm,
         topMargin=1.6 * cm,
         bottomMargin=1.85 * cm,
-        title="SalesOps AI - Section 03 Architecture Explanation",
-        author="SalesOps AI Project Team",
-        subject="Architecture explanation for final project submission",
+        title="Group - E | SalesOps AI | Section 03",
+        author="Group E",
+        subject="Section 03 Architecture Explanation",
     )
     story = markdown_to_story(SOURCE.read_text(encoding="utf-8"))
     doc.build(story, onFirstPage=footer, onLaterPages=footer)

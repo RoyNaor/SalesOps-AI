@@ -41,7 +41,7 @@ def build_styles():
             fontName="Helvetica-Bold",
             fontSize=15,
             leading=19,
-            textColor=colors.HexColor("#1f5f72"),
+            textColor=colors.HexColor("#1a5c4a"),
             spaceBefore=16,
             spaceAfter=7,
             keepWithNext=True,
@@ -147,8 +147,9 @@ def parse_markdown(markdown: str):
             story.append(Paragraph(inline_markup(line[2:]), styles["bullet"], bulletText="-"))
             continue
 
-        style_name = "small" if line.startswith("Source of truth:") else "body"
-        story.append(Paragraph(inline_markup(line), styles[style_name]))
+        if line.startswith(("Source of truth:", "Audience:", "Language:")):
+            continue
+        story.append(Paragraph(inline_markup(line), styles["body"]))
 
     return story
 
@@ -158,7 +159,7 @@ def header_footer(canvas, doc):
     width, height = LETTER
     canvas.setFont("Helvetica", 8)
     canvas.setFillColor(colors.HexColor("#5b6570"))
-    canvas.drawString(doc.leftMargin, height - 0.42 * inch, "SalesOps AI - Section 05 Feature and Use Case List")
+    canvas.drawString(doc.leftMargin, height - 0.42 * inch, "Group - E  |  SalesOps AI  |  Section 05")
     canvas.drawRightString(width - doc.rightMargin, 0.42 * inch, f"Page {doc.page}")
     canvas.setStrokeColor(colors.HexColor("#d7e3e7"))
     canvas.setLineWidth(0.5)
@@ -175,9 +176,9 @@ def main():
         leftMargin=0.72 * inch,
         topMargin=0.72 * inch,
         bottomMargin=0.66 * inch,
-        title="SalesOps AI Section 05 Feature and Use Case List",
-        author="SalesOps AI Team",
-        subject="Final project submission section 05",
+        title="Group - E | SalesOps AI | Section 05",
+        author="Group E",
+        subject="Section 05 Feature and Use Case List",
     )
     doc.build(parse_markdown(markdown), onFirstPage=header_footer, onLaterPages=header_footer)
     print(OUTPUT)

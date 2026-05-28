@@ -1,10 +1,5 @@
 # SalesOps AI — Deployment Guide
 
-> **Section 9 Submission — SalesOps AI Final Project**
-> GitHub: [https://github.com/roynaor/salesops-ai](https://github.com/roynaor/salesops-ai)
-
-This guide walks a technical person through a complete, from-scratch deployment of the SalesOps AI platform on a clean AWS account. All infrastructure is defined as code via **AWS SAM** (`backend/template.yaml`). Follow the steps in order.
-
 ---
 
 ## Table of Contents

@@ -475,9 +475,9 @@ def pdf_styles():
 def hdr_ftr(canvas, doc):
     canvas.saveState()
     w, h = LETTER
-    canvas.setFont("Helvetica", 7.5)
+    canvas.setFont("Helvetica", 8)
     canvas.setFillColor(MUTED_C)
-    canvas.drawString(doc.leftMargin, h - 0.40*inch, "SalesOps AI — Section 12 Risk Register")
+    canvas.drawString(doc.leftMargin, h - 0.40*inch, "Group - E  |  SalesOps AI  |  Section 12")
     canvas.drawRightString(w - doc.rightMargin, 0.40*inch, f"Page {doc.page}")
     canvas.setStrokeColor(TEAL_L)
     canvas.setLineWidth(0.5)
@@ -490,7 +490,7 @@ def build_pdf():
 
     # ── Cover / intro ──────────────────────────────────────────────────────────
     story.append(Paragraph("Section 12 – Risk Register", S["title"]))
-    story.append(Paragraph("Project: SalesOps AI  •  Prepared: May 27, 2026", S["small"]))
+    story.append(Paragraph("Prepared: May 27, 2026", S["small"]))
     story.append(Spacer(1, 0.08*inch))
     story.append(Paragraph(
         "This register identifies 12 risks across infrastructure, external dependencies, "
@@ -708,9 +708,9 @@ def build_pdf():
         str(PDF_OUT), pagesize=LETTER,
         rightMargin=0.70*inch, leftMargin=0.70*inch,
         topMargin=0.72*inch, bottomMargin=0.64*inch,
-        title="SalesOps AI Section 12 Risk Register",
-        author="SalesOps AI Team",
-        subject="Final project submission section 12",
+        title="Group - E | SalesOps AI | Section 12",
+        author="Group E",
+        subject="Section 12 Risk Register",
     )
     doc.build(story, onFirstPage=hdr_ftr, onLaterPages=hdr_ftr)
     print(f"Wrote {PDF_OUT}")

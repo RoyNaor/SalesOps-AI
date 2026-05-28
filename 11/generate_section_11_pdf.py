@@ -206,8 +206,9 @@ def parse_markdown(markdown: str, styles_map: dict) -> list:
                                    bulletText="–"))
             continue
 
-        style = "small" if line.startswith(("Source of truth:", "Audience:")) else "body"
-        story.append(Paragraph(inline_markup(line), styles_map[style]))
+        if line.startswith(("Source of truth:", "Audience:", "Language:", "Project:", "Prepared:")):
+            continue
+        story.append(Paragraph(inline_markup(line), styles_map["body"]))
 
     if in_table:
         flush_table()
@@ -218,9 +219,9 @@ def parse_markdown(markdown: str, styles_map: dict) -> list:
 def header_footer(canvas, doc):
     canvas.saveState()
     w, h = LETTER
-    canvas.setFont("Helvetica", 7.5)
+    canvas.setFont("Helvetica", 8)
     canvas.setFillColor(MUTED)
-    canvas.drawString(doc.leftMargin, h - 0.40 * inch, "SalesOps AI — Section 11 Developer Reference")
+    canvas.drawString(doc.leftMargin, h - 0.40 * inch, "Group - E  |  SalesOps AI  |  Section 11")
     canvas.drawRightString(w - doc.rightMargin, 0.40 * inch, f"Page {doc.page}")
     canvas.setStrokeColor(TEAL_LIGHT)
     canvas.setLineWidth(0.5)
@@ -238,9 +239,9 @@ def main():
         leftMargin=0.70 * inch,
         topMargin=0.72 * inch,
         bottomMargin=0.64 * inch,
-        title="SalesOps AI Section 11 Developer Reference",
-        author="SalesOps AI Team",
-        subject="Final project submission section 11",
+        title="Group - E | SalesOps AI | Section 11",
+        author="Group E",
+        subject="Section 11 Developer Reference",
     )
     doc.build(parse_markdown(markdown, styles_map),
               onFirstPage=header_footer, onLaterPages=header_footer)

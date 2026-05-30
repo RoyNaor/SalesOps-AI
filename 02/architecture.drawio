@@ -1,0 +1,100 @@
+<mxfile host="app.diagrams.net" agent="ChatGPT">
+  <diagram id="salesops-clean-architecture" name="SalesOps AI - Clean AWS Architecture">
+    <mxGraphModel dx="1488" dy="818" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="1400" pageHeight="900" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="title" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=24;fontStyle=1;fontColor=#232F3E;" value="SalesOps AI – Clean AWS Architecture" vertex="1">
+          <mxGeometry height="40" width="1000" x="200" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="subtitle" parent="1" style="text;html=1;strokeColor=none;fillColor=none;align=center;verticalAlign=middle;whiteSpace=wrap;fontSize=12;fontColor=#545B64;" value="Serverless deployment · us-east-1 · AWS SAM / CloudFormation · React/Vite frontend" vertex="1">
+          <mxGeometry height="25" width="1000" x="200" y="58" as="geometry" />
+        </mxCell>
+        <mxCell id="aws-cloud" parent="1" style="points=[[0,0],[0.25,0],[0.5,0],[0.75,0],[1,0],[1,0.25],[1,0.5],[1,0.75],[1,1],[0.75,1],[0.5,1],[0.25,1],[0,1],[0,0.75],[0,0.5],[0,0.25]];shape=mxgraph.aws4.group;grIcon=mxgraph.aws4.group_aws_cloud_alt;strokeColor=#232F3E;fillColor=#FFFFFF;verticalLabelPosition=top;verticalAlign=bottom;align=center;html=1;fontSize=13;fontStyle=1;fontColor=#232F3E;" value="AWS Cloud – US East (N. Virginia) / us-east-1" vertex="1">
+          <mxGeometry height="710" width="1260" x="70" y="95" as="geometry" />
+        </mxCell>
+        <mxCell id="client-zone" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6F2F8;strokeColor=#147EBA;fontColor=#147EBA;fontStyle=1;" value="Client Environment" vertex="1">
+          <mxGeometry height="115" width="320" x="540" y="125" as="geometry" />
+        </mxCell>
+        <mxCell id="react" parent="1" style="shape=mxgraph.aws4.general;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#232F3E;strokeColor=none;fontColor=#ffffff;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;React SPA&lt;/b&gt;&lt;br&gt;Vite · React Router · TanStack Query" vertex="1">
+          <mxGeometry height="60" width="80" x="660" y="150" as="geometry" />
+        </mxCell>
+        <mxCell id="api" parent="1" style="shape=mxgraph.aws4.api_gateway;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#E7157B;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;Amazon API Gateway&lt;/b&gt;&lt;br&gt;REST API · Regional&lt;br&gt;JWT Authorizer" vertex="1">
+          <mxGeometry height="60" width="80" x="660" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="cognito" parent="1" style="shape=mxgraph.aws4.cognito;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#BF0816;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;Amazon Cognito&lt;/b&gt;&lt;br&gt;User Pool&lt;br&gt;Authentication + JWT" vertex="1">
+          <mxGeometry height="60" width="80" x="290" y="285" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda-zone" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#F9E8F2;strokeColor=#E7157B;fontColor=#E7157B;fontStyle=1;" value="AWS Lambda Backend" vertex="1">
+          <mxGeometry height="170" width="860" x="270" y="420" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda-auth" parent="1" style="shape=mxgraph.aws4.lambda_function;fillColor=#E7157B;strokeColor=none;fontColor=#232F3E;labelBackgroundColor=#ffffff;align=center;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;aspect=fixed;" value="&lt;b&gt;Auth Functions&lt;/b&gt;&lt;br&gt;/auth/signup&lt;br&gt;/auth/signin&lt;br&gt;/auth/refresh&lt;br&gt;/auth/me" vertex="1">
+          <mxGeometry height="70" width="70" x="355" y="465" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda-exam" parent="1" style="shape=mxgraph.aws4.lambda_function;fillColor=#E7157B;strokeColor=none;fontColor=#232F3E;labelBackgroundColor=#ffffff;align=center;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;aspect=fixed;" value="&lt;b&gt;Exam Functions&lt;/b&gt;&lt;br&gt;Start session&lt;br&gt;Pulse polling&lt;br&gt;Submit responses&lt;br&gt;AI evaluation" vertex="1">
+          <mxGeometry height="70" width="70" x="665" y="465" as="geometry" />
+        </mxCell>
+        <mxCell id="lambda-content" parent="1" style="shape=mxgraph.aws4.lambda_function;fillColor=#E7157B;strokeColor=none;fontColor=#232F3E;labelBackgroundColor=#ffffff;align=center;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;aspect=fixed;" value="&lt;b&gt;Management / Content Functions&lt;/b&gt;&lt;br&gt;Users&lt;br&gt;Personas&lt;br&gt;Scenarios&lt;br&gt;Dashboard" vertex="1">
+          <mxGeometry height="70" width="70" x="975" y="465" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb-zone" parent="1" style="rounded=1;whiteSpace=wrap;html=1;fillColor=#E6EEF8;strokeColor=#2E73B8;fontColor=#2E73B8;fontStyle=1;" value="Amazon DynamoDB – PAY_PER_REQUEST" vertex="1">
+          <mxGeometry height="120" width="680" x="200" y="650" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb-users" parent="1" style="shape=mxgraph.aws4.dynamodb;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#2E73B8;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;UsersTable&lt;/b&gt;&lt;br&gt;PK: userId&lt;br&gt;GSI: EmailIndex" vertex="1">
+          <mxGeometry height="55" width="70" x="255" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb-personas" parent="1" style="shape=mxgraph.aws4.dynamodb;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#2E73B8;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;PersonasTable&lt;/b&gt;&lt;br&gt;PK: personaId" vertex="1">
+          <mxGeometry height="55" width="70" x="405" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb-scenarios" parent="1" style="shape=mxgraph.aws4.dynamodb;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#2E73B8;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;ScenariosTable&lt;/b&gt;&lt;br&gt;PK: scenarioId" vertex="1">
+          <mxGeometry height="55" width="70" x="555" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="ddb-exam" parent="1" style="shape=mxgraph.aws4.dynamodb;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#2E73B8;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;ExamSessionsTable&lt;/b&gt;&lt;br&gt;PK: sessionId&lt;br&gt;SK: recordId" vertex="1">
+          <mxGeometry height="55" width="70" x="705" y="680" as="geometry" />
+        </mxCell>
+        <mxCell id="sqs" parent="1" style="shape=mxgraph.aws4.sqs;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#E7157B;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;Amazon SQS&lt;/b&gt;&lt;br&gt;ExamIssueReleaseQueue&lt;br&gt;Delayed issue release" vertex="1">
+          <mxGeometry height="60" width="80" x="975" y="665" as="geometry" />
+        </mxCell>
+        <mxCell id="secrets" parent="1" style="shape=mxgraph.aws4.secrets_manager;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#BF0816;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;AWS Secrets Manager&lt;/b&gt;&lt;br&gt;External API credentials&lt;br&gt;Application secrets" vertex="1">
+          <mxGeometry height="60" width="80" x="1145" y="465" as="geometry" />
+        </mxCell>
+        <mxCell id="openai" parent="1" style="shape=mxgraph.aws4.general;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#74AA9C;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;External OpenAI API&lt;/b&gt;&lt;br&gt;AI evaluation engine" vertex="1">
+          <mxGeometry height="60" width="80" x="1145" y="640" as="geometry" />
+        </mxCell>
+        <mxCell id="deploy" parent="1" style="shape=mxgraph.aws4.cloudformation;labelBackgroundColor=#ffffff;sketch=0;fontStyle=0;labelPosition=center;align=center;spacingTop=0;fillColor=#E7157B;strokeColor=none;fontColor=#232F3E;html=1;fontSize=10;verticalLabelPosition=bottom;verticalAlign=top;" value="&lt;b&gt;AWS SAM / CloudFormation&lt;/b&gt;&lt;br&gt;Serverless deployment&lt;br&gt;IAM LabRole" vertex="1">
+          <mxGeometry height="60" width="80" x="120" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="e-client-api" edge="1" parent="1" source="react" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;endArrow=block;endFill=1;strokeColor=#232F3E;" target="api" value="HTTPS">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-cog-api" edge="1" parent="1" source="cognito" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;dashed=1;endArrow=block;endFill=1;strokeColor=#BF0816;" target="api" value="JWT validation">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-api-lambda" edge="1" parent="1" source="api" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;endArrow=block;endFill=1;strokeColor=#232F3E;" target="lambda-zone" value="REST routes">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-auth-cog" edge="1" parent="1" source="lambda-auth" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;dashed=1;endArrow=block;endFill=1;strokeColor=#BF0816;" target="cognito" value="Cognito SDK">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-lambda-ddb" edge="1" parent="1" source="lambda-zone" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;endArrow=block;endFill=1;strokeColor=#2E73B8;" target="ddb-zone" value="CRUD / session state / analytics">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-exam-sqs" edge="1" parent="1" source="lambda-exam" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;endArrow=block;endFill=1;strokeColor=#E7157B;" target="sqs" value="Queue delayed exam issues">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-sqs-exam" edge="1" parent="1" source="sqs" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;endArrow=block;endFill=1;strokeColor=#E7157B;" target="lambda-exam" value="SQS trigger">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-lambda-secret" edge="1" parent="1" source="lambda-zone" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;endArrow=block;endFill=1;strokeColor=#BF0816;" target="secrets" value="Fetch secrets">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-secret-openai" edge="1" parent="1" source="secrets" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;endArrow=block;endFill=1;strokeColor=#74AA9C;" target="openai" value="HTTPS API call">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e-deploy" edge="1" parent="1" source="deploy" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;fontSize=10;dashed=1;endArrow=block;endFill=1;strokeColor=#545B64;" target="api" value="provisions stack">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

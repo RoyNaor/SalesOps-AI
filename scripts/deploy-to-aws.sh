@@ -58,7 +58,7 @@ npm install --silent
 echo ""
 echo "=== Step 4 — SAM build ==="
 cd "$REPO_ROOT/backend"
-sam build --quiet
+sam build
 
 echo ""
 echo "=== Step 4b — SAM deploy ==="
@@ -181,10 +181,13 @@ aws s3api put-bucket-policy \
   --region us-east-1
 
 # Upload build artifacts
-aws s3 sync "$REPO_ROOT/frontend/dist/" "s3://${BUCKET_NAME}/" \
-  --delete \
-  --region us-east-1 \
-  --output text | grep -c "upload:" | xargs -I{} echo "{} files uploaded"
+UPLOAD_COUNT=$(
+  aws s3 sync "$REPO_ROOT/frontend/dist/" "s3://${BUCKET_NAME}/" \
+    --delete \
+    --region us-east-1 \
+    --output text | awk '/upload:/ { count++ } END { print count + 0 }'
+)
+echo "$UPLOAD_COUNT files uploaded"
 
 FRONTEND_URL="http://${BUCKET_NAME}.s3-website-us-east-1.amazonaws.com"
 echo "Frontend live at: $FRONTEND_URL"
@@ -220,7 +223,7 @@ create_user() {
     # Register via API so DynamoDB profile is created
     SIGNUP_RESULT=$(curl -s -X POST "${API_BASE_URL}/auth/signup" \
       -H "Content-Type: application/json" \
-      -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASS}\",\"name\":\"${DISPLAY}\"}")
+      -d "{\"email\":\"${EMAIL}\",\"password\":\"${PASS}\",\"fullName\":\"${DISPLAY}\"}")
     echo "  signup $EMAIL: $(echo "$SIGNUP_RESULT" | python3 -c 'import sys,json; d=json.load(sys.stdin); print(d.get("message","ok"))' 2>/dev/null || echo "$SIGNUP_RESULT")"
 
     # Admin-confirm so no email verification needed
